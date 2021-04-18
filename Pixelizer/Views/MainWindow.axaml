@@ -23,6 +23,7 @@
                 <Label Content="Width" />
                 <Grid ColumnDefinitions="*, Auto">
                     <TextBox Text="{Binding Width}"
+                             IsEnabled="{Binding !IsBusy}"
                              Watermark="Width"/>
                     <TextBlock Text="mm" 
                                VerticalAlignment="Center"
@@ -44,6 +45,7 @@
                 <Label Content="Pen width" />
                 <Grid ColumnDefinitions="*, Auto">
                     <TextBox Text="{Binding GcodeConfig.PenWidth}"
+                             IsEnabled="{Binding !IsBusy}"
                              Watermark="Pen width"/>
                     <TextBlock Text="mm" 
                                VerticalAlignment="Center"
@@ -53,22 +55,28 @@
                 
                 <Label Content="Threshold" />
                 <TextBox Text="{Binding Threshold}"
+                         IsEnabled="{Binding !IsBusy}"
                          Watermark="Threshold" />
                 
                 <Label Content="Z axis bottom" />
                 <TextBox Text="{Binding GcodeConfig.ZAxisDown}"
+                         IsEnabled="{Binding !IsBusy}"
                          Watermark="Z axis bottom" />
                 <Label Content="Z axis top" />
                 <TextBox Text="{Binding GcodeConfig.ZAxisUp}"
+                         IsEnabled="{Binding !IsBusy}"
                          Watermark="Z axis top" />
                 <Label Content="Result path" />
                 <TextBox Text="{Binding ResultPath}"
+                         IsEnabled="{Binding !IsBusy}"
                          Watermark="Result path" />
 
                 <Label Content="Offset X" />
-                <TextBox Text="{Binding GcodeConfig.OffsetX}" />
+                <TextBox Text="{Binding GcodeConfig.OffsetX}"
+                         IsEnabled="{Binding !IsBusy}" />
                 <Label Content="Offset Y" />
-                <TextBox Text="{Binding GcodeConfig.OffsetY}" />
+                <TextBox Text="{Binding GcodeConfig.OffsetY}"
+                         IsEnabled="{Binding !IsBusy}" />
                 
                 <Label Content="Calculated width"/>
                 <Grid ColumnDefinitions="*, Auto">
