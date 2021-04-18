@@ -1,0 +1,79 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Pixelizer.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="Pixelizer.Views.MainWindow"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Pixelizer">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid 
+        ColumnDefinitions="*,*,*">
+        
+        <StackPanel Grid.Column="0">
+            <Label Content="Breite" />
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBox Text="{Binding Width}"
+                         Watermark="Breite"/>
+                <TextBlock Text="mm" 
+                           Grid.Column="1"/>
+            </Grid>
+            
+            <Label Content="Höhe" />
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBox Text="{Binding Height}"
+                         Watermark="Höhe"/>
+                <TextBlock Text="mm" 
+                           Grid.Column="1"/>
+            </Grid>
+            
+            <Label Content="Stiftdicke" />
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBox Text="{Binding PenWidth}"
+                         Watermark="Stiftdicke"/>
+                <TextBlock Text="mm" 
+                           Grid.Column="1"/>
+            </Grid>
+            
+            <Label Content="Threshold" />
+            <TextBox Text="{Binding StringThreshold}"
+                     Watermark="Threshold" />
+            
+            <Label Content="Berechnete Breite"/>
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBox Text="{Binding Width}"
+                         IsEnabled="False"/>
+                <TextBlock Text="px" 
+                           Grid.Column="1"/>
+            </Grid>
+            
+            <Label Content="Berechnete Höhe"/>
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBox Text="{Binding Height}"
+                         IsEnabled="False"/>
+                <TextBlock Text="px" 
+                           Grid.Column="1"/>
+            </Grid>
+        </StackPanel>
+        
+        <Image Grid.Column="1"
+               Source="{Binding SourceImage}"
+               Stretch="Uniform"
+               IsVisible="{Binding SourceImage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <Panel
+            IsVisible="{Binding SourceImage, Converter={x:Static ObjectConverters.IsNull}}"
+            Grid.Column="1"
+            x:Name="DropPanel"
+            Background="Green"
+            DragDrop.AllowDrop="True"/>
+        
+        <Image Grid.Column="2"
+               Source="{Binding TargetImage}"
+               Stretch="Uniform" />
+    </Grid>
+</Window>
