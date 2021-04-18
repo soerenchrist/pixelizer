@@ -54,8 +54,10 @@
                 </Grid>
                 
                 <Label Content="Color mode"/>
-                <ComboBox Items="{Binding ColorModes}"
-                          SelectedItem="{Binding SelectedColorMode}" />
+                <ComboBox 
+                    IsEnabled="{Binding !IsBusy}"
+                    Items="{Binding ColorModes}"
+                    SelectedItem="{Binding SelectedColorMode}" />
                 
                 <Label Content="Threshold" />
                 <TextBox Text="{Binding Threshold}"
@@ -70,11 +72,6 @@
                 <TextBox Text="{Binding GcodeConfig.ZAxisUp}"
                          IsEnabled="{Binding !IsBusy}"
                          Watermark="Z axis top" />
-                <Label Content="Result path" />
-                <TextBox Text="{Binding ResultPath}"
-                         IsEnabled="{Binding !IsBusy}"
-                         Watermark="Result path" />
-
                 <Label Content="Offset X" />
                 <TextBox Text="{Binding GcodeConfig.OffsetX}"
                          IsEnabled="{Binding !IsBusy}" />
@@ -126,11 +123,20 @@
                Source="{Binding TargetImage}"
                Stretch="Uniform" />
         
-        <Button Content="Convert to GCode"
-                Grid.Column="2"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Bottom"
-                Command="{Binding ConvertToGcode}" />
+        <StackPanel Grid.Column="2"
+                    Spacing="5"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom">
+            <Button Content="Export Image"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Command="{Binding ExportImageCommand}" />
+            <Button Content="Convert to GCode"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Command="{Binding ConvertToGcode}" />
+        </StackPanel>
         
         <ProgressBar IsIndeterminate="True"
                      Grid.Column="0"

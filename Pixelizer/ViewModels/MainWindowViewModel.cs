@@ -5,6 +5,8 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Pixelizer.Models;
 using Pixelizer.Services;
 using Pixelizer.Util;
@@ -17,13 +19,6 @@ namespace Pixelizer.ViewModels
     {
         private readonly ObservableAsPropertyHelper<bool> _isBusy;
         public bool IsBusy => _isBusy.Value;
-        
-        private string _resultPath;
-        public string ResultPath
-        {
-            get => _resultPath;
-            set => this.RaiseAndSetIfChanged(ref _resultPath, value);
-        }
 
         private int _width;
         public int Width
@@ -102,17 +97,15 @@ namespace Pixelizer.ViewModels
 
         public ReactiveCommand<Unit, Unit> ConvertToGcode { get; }
         private ReactiveCommand<Unit, Unit> ConvertImageCommand { get; }
+        private ReactiveCommand<Unit, Unit> ExportImageCommand { get; }
         
         public MainWindowViewModel()
         {
             GcodeConfig = new GcodeConfig();
             ConvertToGcode = ReactiveCommand.CreateFromTask(Convert);
             ConvertImageCommand = ReactiveCommand.CreateFromTask(ConvertImage);
-
-            _resultPath = 
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "result.gcode");
-
+            ExportImageCommand = ReactiveCommand.CreateFromTask(ExportImage);
+            
             var imageChanged = this.WhenAnyValue(x => x.ImagePath)
                 .Where(x => x != null);
             
@@ -167,10 +160,48 @@ namespace Pixelizer.ViewModels
                 .ToProperty(this, x => x.IsBusy);
         }
 
+        private async Task ExportImage()
+        {
+            if (_currentImage == null)
+            {
+                return;
+            }
+
+            var path = await GetSaveFileName("jpg");
+            if (path != null)
+            {
+                _currentImage.Save(path);
+            }
+        }
+
+        private async Task<string?> GetSaveFileName(string extension)
+        {
+            SaveFileDialog dialog = new();
+            
+            dialog.Filters.Add(new FileDialogFilter { Name = extension, Extensions = { extension } });
+            dialog.DefaultExtension = extension;
+            dialog.InitialFileName = "result";
+            
+            if (Application.Current.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                var window = desktop.MainWindow;
+                var path = await dialog.ShowAsync(window);
+                return path;
+            }
+
+            return null;
+        }
+
         private async Task Convert()
         {
             if (_currentImage == null) 
                 return;
+            
+            var path = await GetSaveFileName("gcode");
+            if (path == null)
+            {
+                return;
+            }
 
             var result = await Task.Run(() =>
             {
@@ -178,7 +209,7 @@ namespace Pixelizer.ViewModels
                 return encoder.ConvertImageToGcode(_currentImage, GcodeConfig);
             });
 
-            await File.WriteAllTextAsync(ResultPath, result);
+            await File.WriteAllTextAsync(path, result);
         }
 
         private void CheckAspectHeight()

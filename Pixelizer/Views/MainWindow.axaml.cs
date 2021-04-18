@@ -12,9 +12,6 @@ namespace Pixelizer.Views
 {
     public class MainWindow : ReactiveWindow<MainWindowViewModel>
     {
-        private Panel _dropPanel;
-        private Image _sourceImage;
-
         public MainWindow()
         {
             InitializeComponent();
@@ -22,9 +19,6 @@ namespace Pixelizer.Views
             this.AttachDevTools();
 #endif
 
-            _dropPanel = this.FindControl<Panel>("DropPanel");
-            _sourceImage = this.FindControl<Image>("SourceImage");
-            AddHandler(DragDrop.DropEvent, Drop);
             AddHandler(DragDrop.DropEvent, Drop);
             AddHandler(DragDrop.DragOverEvent, DragOver);
         }
