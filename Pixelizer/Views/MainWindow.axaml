@@ -53,6 +53,10 @@
                                Grid.Column="1"/>
                 </Grid>
                 
+                <Label Content="Color mode"/>
+                <ComboBox Items="{Binding ColorModes}"
+                          SelectedItem="{Binding SelectedColorMode}" />
+                
                 <Label Content="Threshold" />
                 <TextBox Text="{Binding Threshold}"
                          IsEnabled="{Binding !IsBusy}"

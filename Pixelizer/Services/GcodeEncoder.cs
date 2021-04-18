@@ -38,7 +38,7 @@ namespace Pixelizer.Services
             for (int x = 0; x < image.Width; x++)
             {
                 c = image.GetPixel(x, y);
-                if (c.R == 0 && c.G == 0 && c.B == 0)
+                if (c.R != 255 || c.G != 255 && c.B != 255)
                 {
                     double xDouble = x;
                     double yDouble = y;

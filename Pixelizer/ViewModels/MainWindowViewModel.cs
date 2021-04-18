@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -14,8 +15,6 @@ namespace Pixelizer.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-
-
         private readonly ObservableAsPropertyHelper<bool> _isBusy;
         public bool IsBusy => _isBusy.Value;
         
@@ -40,8 +39,22 @@ namespace Pixelizer.ViewModels
             set => this.RaiseAndSetIfChanged(ref _height, value);
         }
 
-        private int _threshold = 120;
+        public List<ColorMode> ColorModes { get; } = new()
+        {
+            ColorMode.Black,
+            ColorMode.Red,
+            ColorMode.Green,
+            ColorMode.Blue,
+        };
 
+        private ColorMode _selectedColorMode = ColorMode.Black;
+        public ColorMode SelectedColorMode
+        {
+            get => _selectedColorMode;
+            set => this.RaiseAndSetIfChanged(ref _selectedColorMode, value);
+        }
+
+        private int _threshold = 120;
         public int Threshold
         {
             get => _threshold;
@@ -137,11 +150,15 @@ namespace Pixelizer.ViewModels
                 .Select(_ => Unit.Default);
             var calcHeightChanged = this.WhenAnyValue(x => x.CalculatedHeight)
                 .Select(_ => Unit.Default);
-
+            var colorModeChanged = this.WhenAnyValue(x => x.SelectedColorMode)
+                .Select(_ => Unit.Default);
+            
+            
             calcHeightChanged
                 .Merge(calcWidthChanged)
                 .Merge(imageChanged.Select(_ => Unit.Default))
                 .Merge(thresholdChanged)
+                .Merge(colorModeChanged)
                 .Throttle(TimeSpan.FromMilliseconds(500))
                 .InvokeCommand(this, x => x.ConvertImageCommand);
 
@@ -220,7 +237,7 @@ namespace Pixelizer.ViewModels
                 var memoryStream = new MemoryStream();
                 scaled.Save(memoryStream);
                 var sysBitmap = new System.Drawing.Bitmap(memoryStream);
-                sysBitmap.ToBlackAndWhite(Threshold);
+                sysBitmap.ToPixelImage(SelectedColorMode, Threshold);
                 // Loading Avalonia Bitmap from MemoryStream did not work
                 // Therefore, saving to temp file on disk
                 var tempFile = Path.GetTempFileName();
