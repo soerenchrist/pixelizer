@@ -1,55 +1,53 @@
 ﻿using System;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Avalonia;
-using Avalonia.Media.Imaging;
 using Pixelizer.Models;
 using Pixelizer.Services;
 using Pixelizer.Util;
 using ReactiveUI;
+using Bitmap = Avalonia.Media.Imaging.Bitmap;
 
 namespace Pixelizer.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        private const string Path = @"C:\Users\chris\Downloads\result.jpg";
+
+
+        private readonly ObservableAsPropertyHelper<bool> _isBusy;
+        public bool IsBusy => _isBusy.Value;
         
-        private string _width = "";
-        public string Width
+        private string _resultPath;
+        public string ResultPath
+        {
+            get => _resultPath;
+            set => this.RaiseAndSetIfChanged(ref _resultPath, value);
+        }
+
+        private int _width;
+        public int Width
         {
             get => _width;
             set => this.RaiseAndSetIfChanged(ref _width, value);
         }
 
-        private string _stringThreshold = "120";
-        public string StringThreshold
+        private int _height;
+        public int Height
         {
-            get => _stringThreshold;
-            set => this.RaiseAndSetIfChanged(ref _stringThreshold, value);
+            get => _height;
+            set => this.RaiseAndSetIfChanged(ref _height, value);
         }
 
-        private string _zAxisDown = "0";
-        public string ZAxisDown
+        private int _threshold = 120;
+
+        public int Threshold
         {
-            get => _zAxisDown;
-            set => this.RaiseAndSetIfChanged(ref _zAxisDown, value);
+            get => _threshold;
+            set => this.RaiseAndSetIfChanged(ref _threshold, value);
         }
 
-        private string _zAxisUp = "1";
-        public string ZAxisUp
-        {
-            get => _zAxisUp;
-            set => this.RaiseAndSetIfChanged(ref _zAxisUp, value);
-        }
-        
-        public int Threshold => StringThreshold.ParseOrDefault(150);
-        public int NumericWidth => Width.ParseOrDefault(0);
-        public int NumericHeight => Height.ParseOrDefault(0);
-        public double NumericPenWidth => PenWidth.ParseOrDefault(0.0);
-        
         private int _calculatedWidth;
         public int CalculatedWidth
         {
@@ -62,20 +60,6 @@ namespace Pixelizer.ViewModels
         {
             get => _calculatedHeight;
             set => this.RaiseAndSetIfChanged(ref _calculatedHeight, value);
-        }
-        
-        private string _height = "";
-        public string Height
-        {
-            get => _height;
-            set => this.RaiseAndSetIfChanged(ref _height, value);
-        }
-
-        private string _penWidth = "1";
-        public string PenWidth
-        {
-            get => _penWidth;
-            set => this.RaiseAndSetIfChanged(ref _penWidth, value);
         }
 
         private ImageInfo? _imagePath;
@@ -98,15 +82,24 @@ namespace Pixelizer.ViewModels
             get => _targetImage;
             set => this.RaiseAndSetIfChanged(ref _targetImage, value);
         }
+        
+        public GcodeConfig GcodeConfig { get; }
 
         private System.Drawing.Bitmap? _currentImage;
 
         public ReactiveCommand<Unit, Unit> ConvertToGcode { get; }
+        private ReactiveCommand<Unit, Unit> ConvertImageCommand { get; }
         
         public MainWindowViewModel()
         {
-            ConvertToGcode = ReactiveCommand.Create(Convert);
-            
+            GcodeConfig = new GcodeConfig();
+            ConvertToGcode = ReactiveCommand.CreateFromTask(Convert);
+            ConvertImageCommand = ReactiveCommand.CreateFromTask(ConvertImage);
+
+            _resultPath = 
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "result.gcode");
+
             var imageChanged = this.WhenAnyValue(x => x.ImagePath)
                 .Where(x => x != null);
             
@@ -114,106 +107,88 @@ namespace Pixelizer.ViewModels
                 .Do(LoadImage!)
                 .Subscribe();
 
-            var widthChanged = this.WhenAnyValue(x => x.Width);
-            var thresholdChanged = this.WhenAnyValue(x => x.StringThreshold);
-            var heightChanged = this.WhenAnyValue(x => x.Height);
-            var penWidthChanged = this.WhenAnyValue(x => x.PenWidth);
+            var widthChanged = this.WhenAnyValue(x => x.Width)
+                .Select(_ => Unit.Default);
+            var thresholdChanged = this.WhenAnyValue(x => x.Threshold)
+                .Select(_ => Unit.Default);
+            var heightChanged = this.WhenAnyValue(x => x.Height)
+                .Select(_ => Unit.Default);
+            var penWidthChanged = this.WhenAnyValue(x => x.GcodeConfig.PenWidth)
+                .Select(_ => Unit.Default);
 
             widthChanged
+                .Throttle(TimeSpan.FromMilliseconds(500))
                 .Do(_ => CheckAspectHeight())
                 .Subscribe();
-            
-            heightChanged
-                .Do(_ => CheckAspectWidth())
-                .Subscribe();
-            
+
             widthChanged
                 .Merge(penWidthChanged)
+                .Throttle(TimeSpan.FromMilliseconds(500))
                 .Do(_ => CalculateWidth())
                 .Subscribe();
 
             heightChanged
                 .Merge(penWidthChanged)
+                .Throttle(TimeSpan.FromMilliseconds(500))
                 .Do(_ => CalculateHeight())
                 .Subscribe();
 
-            var calcWidthChanged = this.WhenAnyValue(x => x.CalculatedWidth);
-            var calcHeightChanged = this.WhenAnyValue(x => x.CalculatedHeight);
+            var calcWidthChanged = this.WhenAnyValue(x => x.CalculatedWidth)
+                .Select(_ => Unit.Default);
+            var calcHeightChanged = this.WhenAnyValue(x => x.CalculatedHeight)
+                .Select(_ => Unit.Default);
 
             calcHeightChanged
                 .Merge(calcWidthChanged)
-                .Merge(imageChanged.Select(_ => 0))
-                .Merge(thresholdChanged.Select(_ => 0))
+                .Merge(imageChanged.Select(_ => Unit.Default))
+                .Merge(thresholdChanged)
                 .Throttle(TimeSpan.FromMilliseconds(500))
-                .Do(async _ => await ConvertImage())
-                .Subscribe();
+                .InvokeCommand(this, x => x.ConvertImageCommand);
+
+            _isBusy = ConvertImageCommand.IsExecuting
+                .Merge(ConvertToGcode.IsExecuting)
+                .ToProperty(this, x => x.IsBusy);
         }
 
-        private void Convert()
+        private async Task Convert()
         {
             if (_currentImage == null) 
                 return;
 
-            if (!int.TryParse(ZAxisDown, out var zDown))
+            var result = await Task.Run(() =>
             {
-                throw new Exception("ZAxis down value is not numeric");
-            }
-
-            if (!int.TryParse(ZAxisUp, out var zUp))
-            {
-                throw new Exception("ZAxis Up value is not numeric");
-            }
-
-            if (NumericPenWidth <= 0)
-            {
-                throw new Exception("Pen width must be number greater than 0");
-            }
-            
-            var encoder = new GcodeEncoder();
-            var result = encoder.ToGcode(_currentImage, new GcodeConfig
-            {
-                PenWidth = NumericPenWidth,
-                ZAxisDown = zDown,
-                ZAxisUp = zUp,
-                FeedRate = 500
+                var encoder = new GcodeEncoder();
+                return encoder.ConvertImageToGcode(_currentImage, GcodeConfig);
             });
-        }
 
-        private void CheckAspectWidth()
-        {
-            if (SourceImage == null)
-                return;
-            var height = Height.ParseOrDefault(0);
-            var aspect = height / SourceImage.Size.Height;
-            Width = ((int) (SourceImage.Size.Width * aspect)).ToString();
+            await File.WriteAllTextAsync(ResultPath, result);
         }
 
         private void CheckAspectHeight()
         {
             if (SourceImage == null)
                 return;
-            var width = Width.ParseOrDefault(0);
             var sourceImageSize = SourceImage.Size;
-            var aspect = width / sourceImageSize.Width;
-            Height = ((int) (sourceImageSize.Height * aspect)).ToString();
+            var aspect = Width / sourceImageSize.Width;
+            Height = (int) (sourceImageSize.Height * aspect);
         }
 
         private void CalculateWidth()
         {
-            if (NumericPenWidth == 0)
+            if (GcodeConfig.PenWidth == 0)
             {
                 CalculatedWidth = 0;
             }
-            CalculatedWidth = (int)(NumericWidth / NumericPenWidth);
+            CalculatedWidth = (int)(Width / GcodeConfig.PenWidth);
         }
         
         private void CalculateHeight()
         {
-            if (NumericPenWidth== 0)
+            if (GcodeConfig.PenWidth == 0)
             {
                 CalculatedHeight = 0;
             }
-            CalculatedHeight = (int)(NumericHeight / NumericPenWidth);
+            CalculatedHeight = (int)(Height / GcodeConfig.PenWidth);
         }
 
         private void LoadImage(ImageInfo info)
@@ -222,12 +197,9 @@ namespace Pixelizer.ViewModels
             {
                 var stream = File.OpenRead(info.Path);
                 SourceImage = Bitmap.DecodeToWidth(stream, info.Width);
-                if (string.IsNullOrWhiteSpace(Height)
-                    && string.IsNullOrWhiteSpace(Width))
-                {
-                    Height = info.Height.ToString();
-                    Width = info.Width.ToString();
-                }
+                
+                Height = info.Height;
+                Width = info.Width;
             }
         }
 
@@ -236,21 +208,30 @@ namespace Pixelizer.ViewModels
             TargetImage = await Task.Run(() 
                 =>
             {
-                
-                if (CalculatedHeight == 0 || CalculatedWidth == 0
-                                          || SourceImage == null)
+                if (SourceImage == null || GcodeConfig.PenWidth == 0)
                     return null;
 
-                var scaled = SourceImage.CreateScaledBitmap(new PixelSize(CalculatedWidth, CalculatedHeight));
+                var width = (int)(Width / GcodeConfig.PenWidth);
+                var height = (int)(Height / GcodeConfig.PenWidth);
+
+                var scaled = SourceImage.CreateScaledBitmap(new PixelSize(width, height));
+                if (scaled == null)
+                    return null;
                 var memoryStream = new MemoryStream();
                 scaled.Save(memoryStream);
                 var sysBitmap = new System.Drawing.Bitmap(memoryStream);
                 sysBitmap.ToBlackAndWhite(Threshold);
-                sysBitmap.Save(Path);
+                // Loading Avalonia Bitmap from MemoryStream did not work
+                // Therefore, saving to temp file on disk
+                var tempFile = Path.GetTempFileName();
+                sysBitmap.Save(tempFile);
 
                 _currentImage = sysBitmap;
                 
-                return new Bitmap(Path);
+                var loaded = new Bitmap(tempFile);
+                File.Delete(tempFile);
+
+                return loaded;
             });
         }
     }

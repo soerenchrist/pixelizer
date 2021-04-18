@@ -1,6 +1,3 @@
-using System;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using Avalonia;
@@ -10,13 +7,13 @@ using Avalonia.Markup.Xaml;
 using Avalonia.ReactiveUI;
 using Pixelizer.Models;
 using Pixelizer.ViewModels;
-using Image = System.Drawing.Image;
 
 namespace Pixelizer.Views
 {
     public class MainWindow : ReactiveWindow<MainWindowViewModel>
     {
         private Panel _dropPanel;
+        private Image _sourceImage;
 
         public MainWindow()
         {
@@ -26,6 +23,8 @@ namespace Pixelizer.Views
 #endif
 
             _dropPanel = this.FindControl<Panel>("DropPanel");
+            _sourceImage = this.FindControl<Image>("SourceImage");
+            AddHandler(DragDrop.DropEvent, Drop);
             AddHandler(DragDrop.DropEvent, Drop);
             AddHandler(DragDrop.DragOverEvent, DragOver);
         }
