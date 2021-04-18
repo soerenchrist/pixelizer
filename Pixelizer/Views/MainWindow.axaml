@@ -44,6 +44,13 @@
             <TextBox Text="{Binding StringThreshold}"
                      Watermark="Threshold" />
             
+            <Label Content="Z-Achse Unten" />
+            <TextBox Text="{Binding ZAxisDown}"
+                     Watermark="Z-Achse Unten" />
+            <Label Content="Z-Achse Oben" />
+            <TextBox Text="{Binding ZAxisUp}"
+                     Watermark="Z-Achse Oben" />
+            
             <Label Content="Berechnete Breite"/>
             <Grid ColumnDefinitions="*, Auto">
                 <TextBox Text="{Binding Width}"
@@ -75,5 +82,11 @@
         <Image Grid.Column="2"
                Source="{Binding TargetImage}"
                Stretch="Uniform" />
+        
+        <Button Content="Zu GCode konvertieren"
+                Grid.Column="2"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Command="{Binding ConvertToGcode}" />
     </Grid>
 </Window>

@@ -24,13 +24,27 @@ namespace Pixelizer.ViewModels
             set => this.RaiseAndSetIfChanged(ref _width, value);
         }
 
-        private string _stringThreshold = "150";
+        private string _stringThreshold = "120";
         public string StringThreshold
         {
             get => _stringThreshold;
             set => this.RaiseAndSetIfChanged(ref _stringThreshold, value);
         }
 
+        private string _zAxisDown = "0";
+        public string ZAxisDown
+        {
+            get => _zAxisDown;
+            set => this.RaiseAndSetIfChanged(ref _zAxisDown, value);
+        }
+
+        private string _zAxisUp = "1";
+        public string ZAxisUp
+        {
+            get => _zAxisUp;
+            set => this.RaiseAndSetIfChanged(ref _zAxisUp, value);
+        }
+        
         public int Threshold => StringThreshold.ParseOrDefault(150);
         public int NumericWidth => Width.ParseOrDefault(0);
         public int NumericHeight => Height.ParseOrDefault(0);
@@ -140,8 +154,29 @@ namespace Pixelizer.ViewModels
             if (_currentImage == null) 
                 return;
 
+            if (!int.TryParse(ZAxisDown, out var zDown))
+            {
+                throw new Exception("ZAxis down value is not numeric");
+            }
+
+            if (!int.TryParse(ZAxisUp, out var zUp))
+            {
+                throw new Exception("ZAxis Up value is not numeric");
+            }
+
+            if (NumericPenWidth <= 0)
+            {
+                throw new Exception("Pen width must be number greater than 0");
+            }
+            
             var encoder = new GcodeEncoder();
-            encoder.ToGcode(_currentImage);
+            var result = encoder.ToGcode(_currentImage, new GcodeConfig
+            {
+                PenWidth = NumericPenWidth,
+                ZAxisDown = zDown,
+                ZAxisUp = zUp,
+                FeedRate = 500
+            });
         }
 
         private void CheckAspectWidth()
@@ -198,13 +233,14 @@ namespace Pixelizer.ViewModels
 
         private async Task ConvertImage()
         {
-            if (CalculatedHeight == 0 || CalculatedWidth == 0
-            || SourceImage == null)
-                return;
-
             TargetImage = await Task.Run(() 
                 =>
             {
+                
+                if (CalculatedHeight == 0 || CalculatedWidth == 0
+                                          || SourceImage == null)
+                    return null;
+
                 var scaled = SourceImage.CreateScaledBitmap(new PixelSize(CalculatedWidth, CalculatedHeight));
                 var memoryStream = new MemoryStream();
                 scaled.Save(memoryStream);
