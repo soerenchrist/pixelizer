@@ -16,22 +16,33 @@ namespace Pixelizer.Util
             {
                 c = bmp.GetPixel(x, y);
                 int average;
-                switch (colorMode)
+                if (c.A == 0)
                 {
-                    case ColorMode.Black:
-                        average = ((c.R + c.B + c.G) / 3);
-                        break;
-                    case ColorMode.Red:
-                        average = c.R > c.B && c.R > c.G ? c.R : 0;
-                        break;
-                    case ColorMode.Green:
-                        average = c.G > c.B && c.G > c.R ? c.G : 0;
-                        break;
-                    case ColorMode.Blue:
-                        average = c.B > c.R && c.B > c.G ? c.B : 0;
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(colorMode), colorMode, null);
+                    average = colorMode switch
+                    {
+                        ColorMode.Black => 255,
+                        _ => 0,
+                    };
+                }
+                else
+                {
+                    switch (colorMode)
+                    {
+                        case ColorMode.Black:
+                            average = ((c.R + c.B + c.G) / 3);
+                            break;
+                        case ColorMode.Red:
+                            average = c.R > c.B && c.R > c.G ? c.R : 0;
+                            break;
+                        case ColorMode.Green:
+                            average = c.G > c.B && c.G > c.R ? c.G : 0;
+                            break;
+                        case ColorMode.Blue:
+                            average = c.B > c.R && c.B > c.G ? c.B : 0;
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(colorMode), colorMode, null);
+                    }
                 }
 
                 Color selectionColor = colorMode switch

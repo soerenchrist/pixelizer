@@ -4,6 +4,13 @@ namespace Pixelizer.Models
 {
     public class GcodeConfig : ReactiveObject
     {
+        private bool _autoHome;
+        public bool AutoHome
+        {
+            get => _autoHome;
+            set => this.RaiseAndSetIfChanged(ref _autoHome, value);
+        }
+        
         private int _zAxisUp = 1;
         public int ZAxisUp
         {

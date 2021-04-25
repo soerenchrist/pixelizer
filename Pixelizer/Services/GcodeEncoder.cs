@@ -15,7 +15,11 @@ namespace Pixelizer.Services
 
             var builder = new GcodeBuilder();
             // Perform homing
-            builder.Home();
+            if (config.AutoHome)
+            {
+                builder.Home();
+            }
+
             foreach (var dot in new PixelsEnumerable(strategy))
             {
                 // Move to next dot position

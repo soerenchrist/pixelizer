@@ -72,6 +72,9 @@
                 <TextBox Text="{Binding GcodeConfig.ZAxisUp}"
                          IsEnabled="{Binding !IsBusy}"
                          Watermark="Z axis top" />
+                <Label Content="Feed Rate" />
+                <TextBox Text="{Binding GcodeConfig.FeedRate}"
+                         IsEnabled="{Binding !IsBusy}" />
                 <Label Content="Offset X" />
                 <TextBox Text="{Binding GcodeConfig.OffsetX}"
                          IsEnabled="{Binding !IsBusy}" />
@@ -79,6 +82,8 @@
                 <TextBox Text="{Binding GcodeConfig.OffsetY}"
                          IsEnabled="{Binding !IsBusy}" />
                 
+                <CheckBox IsChecked="{Binding GcodeConfig.AutoHome}" 
+                          Content="Auto Home" />
                 <Label Content="Calculated width"/>
                 <Grid ColumnDefinitions="*, Auto">
                     <TextBox Text="{Binding CalculatedWidth}"
