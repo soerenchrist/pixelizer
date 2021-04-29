@@ -4,6 +4,13 @@ namespace Pixelizer.Models
 {
     public class GcodeConfig : ReactiveObject
     {
+        private bool _drawFrame;
+        public bool DrawFrame
+        {
+            get => _drawFrame;
+            set => this.RaiseAndSetIfChanged(ref _drawFrame, value);
+        }
+        
         private bool _autoHome;
         public bool AutoHome
         {

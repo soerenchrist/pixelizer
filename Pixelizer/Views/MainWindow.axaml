@@ -84,6 +84,8 @@
                 
                 <CheckBox IsChecked="{Binding GcodeConfig.AutoHome}" 
                           Content="Auto Home" />
+                <CheckBox IsChecked="{Binding GcodeConfig.DrawFrame}" 
+                          Content="Draw Frame" />
                 <Label Content="Calculated width"/>
                 <Grid ColumnDefinitions="*, Auto">
                     <TextBox Text="{Binding CalculatedWidth}"

@@ -20,6 +20,21 @@ namespace Pixelizer.Services
                 builder.Home();
             }
 
+            builder.SetZPosition(config.ZAxisUp);
+            if (config.DrawFrame)
+            {
+                double totalWidth = image.Width * config.PenWidth;
+                double totalHeight = image.Height * config.PenWidth;
+                
+                builder.MoveTo(config.OffsetX, config.OffsetY, config.FeedRate);
+                builder.SetZPosition(config.ZAxisDown);
+                builder.MoveTo(totalWidth + config.OffsetX, config.OffsetY, config.FeedRate);
+                builder.MoveTo(totalWidth + config.OffsetX, totalHeight + config.OffsetY, config.FeedRate);
+                builder.MoveTo(config.OffsetX, totalHeight + config.OffsetY, config.FeedRate);
+                builder.MoveTo(config.OffsetX, config.OffsetY, config.FeedRate);
+            }
+            builder.SetZPosition(config.ZAxisUp);
+
             foreach (var dot in new PixelsEnumerable(strategy))
             {
                 // Move to next dot position
