@@ -7,12 +7,15 @@ namespace Pixelizer.Services
 {
     public class GcodeEncoder
     {
-        public string ConvertImageToGcode(Bitmap image, GcodeConfig config)
+        private readonly IPixelOrderStrategy _pixelOrderStrategy;
+
+        public GcodeEncoder(IPixelOrderStrategy pixelOrderStrategy)
         {
-            var pixels = GetPixels(image, config);
-
-            var strategy = new NearestNeighborStrategy(pixels);
-
+            _pixelOrderStrategy = pixelOrderStrategy;
+        }
+        
+        public string ConvertImageToGcode(List<(double, double)> pixels, int width, int height, GcodeConfig config)
+        {
             var builder = new GcodeBuilder();
             // Perform homing
             if (config.AutoHome)
@@ -23,8 +26,8 @@ namespace Pixelizer.Services
             builder.SetZPosition(config.ZAxisUp);
             if (config.DrawFrame)
             {
-                double totalWidth = image.Width * config.PenWidth;
-                double totalHeight = image.Height * config.PenWidth;
+                double totalWidth = width * config.PenWidth;
+                double totalHeight = height * config.PenWidth;
                 
                 builder.MoveTo(config.OffsetX, config.OffsetY, config.FeedRate);
                 builder.SetZPosition(config.ZAxisDown);
@@ -35,7 +38,8 @@ namespace Pixelizer.Services
             }
             builder.SetZPosition(config.ZAxisUp);
 
-            foreach (var dot in new PixelsEnumerable(strategy))
+            var orderedPixels = _pixelOrderStrategy.GetPixelOrder(pixels);
+            foreach (var dot in orderedPixels)
             {
                 // Move to next dot position
                 builder.MoveTo(dot.Item1, dot.Item2, config.FeedRate);
@@ -48,26 +52,6 @@ namespace Pixelizer.Services
             return builder.Build();
         }
 
-        private static List<(double, double)> GetPixels(Bitmap image, GcodeConfig config)
-        {
-            Color c;
-
-            var dots = new List<(double, double)>();
-            for (int y = 0; y < image.Height; y++)
-            for (int x = 0; x < image.Width; x++)
-            {
-                c = image.GetPixel(x, y);
-                if (c.R != 255 || c.G != 255 && c.B != 255)
-                {
-                    double xDouble = x;
-                    double yDouble = y;
-                    var xCoord = xDouble * config.PenWidth + config.OffsetX;
-                    var yCoord = yDouble * config.PenWidth + config.OffsetY;
-                    dots.Add((xCoord, yCoord));
-                }
-            }
-
-            return dots;
-        }
+        
     }
 }

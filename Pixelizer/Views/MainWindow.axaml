@@ -53,11 +53,22 @@
                                Grid.Column="1"/>
                 </Grid>
                 
+                <Label Content="Pixel strategy" />
+                <ComboBox IsEnabled="{Binding !IsBusy}"
+                          Items="{Binding PixelStrategies}"
+                          SelectedIndex="{Binding SelectedPixelStrategy}" />
+                
                 <Label Content="Color mode"/>
                 <ComboBox 
                     IsEnabled="{Binding !IsBusy}"
                     Items="{Binding ColorModes}"
                     SelectedItem="{Binding SelectedColorMode}" />
+                
+                
+                <Label Content="Adaptive Brush size" />
+                <TextBox Text="{Binding AdaptiveBrushSize}"
+                         IsEnabled="{Binding !IsBusy}"
+                         Watermark="Adaptive brush size" />
                 
                 <Label Content="Threshold" />
                 <TextBox Text="{Binding Threshold}"
@@ -105,6 +116,8 @@
                                Margin="5 0"
                                Grid.Column="1"/>
                 </Grid>
+                
+                <TextBlock Text="{Binding PixelCount}" />
                 
             </StackPanel>
         </ScrollViewer>

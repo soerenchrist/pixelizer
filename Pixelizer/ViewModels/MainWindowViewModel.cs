@@ -7,8 +7,13 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Emgu.CV;
+using Emgu.CV.Structure;
 using Pixelizer.Models;
 using Pixelizer.Services;
+using Pixelizer.Services.Image;
+using Pixelizer.Services.Image.Abstractions;
+using Pixelizer.Services.Strategies;
 using Pixelizer.Util;
 using ReactiveUI;
 using Bitmap = Avalonia.Media.Imaging.Bitmap;
@@ -42,6 +47,21 @@ namespace Pixelizer.ViewModels
             ColorMode.Blue,
         };
 
+        public List<string> PixelStrategies => new()
+        {
+            "Thresholding",
+            "Adaptive Thresholding"
+        };
+
+        private int _selectedPixelStrategy;
+        public int SelectedPixelStrategy
+        {
+            get => _selectedPixelStrategy;
+            set => this.RaiseAndSetIfChanged(ref _selectedPixelStrategy, value);
+        }
+
+        public int PixelCount => _pixelList.Count;
+        
         private ColorMode _selectedColorMode = ColorMode.Black;
         public ColorMode SelectedColorMode
         {
@@ -70,6 +90,13 @@ namespace Pixelizer.ViewModels
             set => this.RaiseAndSetIfChanged(ref _calculatedHeight, value);
         }
 
+        private int _adaptiveBrushSize = 3;
+        public int AdaptiveBrushSize
+        {
+            get => _adaptiveBrushSize;
+            set => this.RaiseAndSetIfChanged(ref _adaptiveBrushSize, value);
+        }
+
         private ImageInfo? _imagePath;
         public ImageInfo? ImagePath
         {
@@ -90,6 +117,8 @@ namespace Pixelizer.ViewModels
             get => _targetImage;
             set => this.RaiseAndSetIfChanged(ref _targetImage, value);
         }
+
+        private List<(double, double)> _pixelList = new();
         
         public GcodeConfig GcodeConfig { get; }
 
@@ -145,19 +174,36 @@ namespace Pixelizer.ViewModels
                 .Select(_ => Unit.Default);
             var colorModeChanged = this.WhenAnyValue(x => x.SelectedColorMode)
                 .Select(_ => Unit.Default);
-            
+            var brushSizeChanged = this.WhenAnyValue(x => x.AdaptiveBrushSize)
+                .Select(_ => Unit.Default);
+            var strategyChanged = this.WhenAnyValue(x => x.SelectedPixelStrategy)
+                .Select(_ => Unit.Default);
             
             calcHeightChanged
                 .Merge(calcWidthChanged)
                 .Merge(imageChanged.Select(_ => Unit.Default))
                 .Merge(thresholdChanged)
                 .Merge(colorModeChanged)
+                .Merge(brushSizeChanged)
+                .Merge(strategyChanged)
                 .Throttle(TimeSpan.FromMilliseconds(500))
                 .InvokeCommand(this, x => x.ConvertImageCommand);
 
+            this.WhenAnyValue(x => x.PixelCount)
+                .Do(CalculateTime)
+                .Subscribe();
+            
             _isBusy = ConvertImageCommand.IsExecuting
                 .Merge(ConvertToGcode.IsExecuting)
                 .ToProperty(this, x => x.IsBusy);
+        }
+
+        private void CalculateTime(int count)
+        {
+            Task.Run(() =>
+            {
+                
+            });
         }
 
         private async Task ExportImage()
@@ -205,8 +251,8 @@ namespace Pixelizer.ViewModels
 
             var result = await Task.Run(() =>
             {
-                var encoder = new GcodeEncoder();
-                return encoder.ConvertImageToGcode(_currentImage, GcodeConfig);
+                var encoder = new GcodeEncoder(new NearestNeighborStrategy());
+                return encoder.ConvertImageToGcode(_pixelList, _currentImage.Width, _currentImage.Height, GcodeConfig);
             });
 
             await File.WriteAllTextAsync(path, result);
@@ -258,7 +304,7 @@ namespace Pixelizer.ViewModels
             {
                 if (SourceImage == null || GcodeConfig.PenWidth == 0)
                     return null;
-
+                
                 var width = (int)(Width / GcodeConfig.PenWidth);
                 var height = (int)(Height / GcodeConfig.PenWidth);
 
@@ -268,13 +314,23 @@ namespace Pixelizer.ViewModels
                 var memoryStream = new MemoryStream();
                 scaled.Save(memoryStream);
                 var sysBitmap = new System.Drawing.Bitmap(memoryStream);
-                sysBitmap.ToPixelImage(SelectedColorMode, Threshold);
+
+                IPixelizerService strategy = SelectedPixelStrategy switch
+                {
+                    0 => new ThresholdingPixelizerService(),
+                    _ => new AdaptiveThresholdingPixelizerService(AdaptiveBrushSize)
+                };
+
+                strategy.ConvertToPixelImage(sysBitmap, SelectedColorMode, Threshold);
+
                 // Loading Avalonia Bitmap from MemoryStream did not work
                 // Therefore, saving to temp file on disk
                 var tempFile = Path.GetTempFileName();
                 sysBitmap.Save(tempFile);
 
                 _currentImage = sysBitmap;
+                _pixelList = _currentImage.GetPixels(GcodeConfig);
+                this.RaisePropertyChanged(nameof(PixelCount));
                 
                 var loaded = new Bitmap(tempFile);
                 File.Delete(tempFile);
