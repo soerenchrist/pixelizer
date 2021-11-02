@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
-using Emgu.CV;
-using Emgu.CV.Structure;
 using Pixelizer.Models;
 using Pixelizer.Services;
 using Pixelizer.Services.Image;
@@ -25,7 +24,14 @@ namespace Pixelizer.ViewModels
         private readonly ObservableAsPropertyHelper<bool> _isBusy;
         public bool IsBusy => _isBusy.Value;
 
+        private readonly ObservableAsPropertyHelper<bool> _isAdaptiveThresholding;
+        public bool IsAdaptiveThresholding => _isAdaptiveThresholding.Value;
+
+        private readonly ObservableAsPropertyHelper<bool> _hasImage;
+        public bool HasImage => _hasImage.Value;
+
         private int _width;
+
         public int Width
         {
             get => _width;
@@ -33,6 +39,7 @@ namespace Pixelizer.ViewModels
         }
 
         private int _height;
+
         public int Height
         {
             get => _height;
@@ -54,6 +61,7 @@ namespace Pixelizer.ViewModels
         };
 
         private int _selectedPixelStrategy;
+
         public int SelectedPixelStrategy
         {
             get => _selectedPixelStrategy;
@@ -61,8 +69,9 @@ namespace Pixelizer.ViewModels
         }
 
         public int PixelCount => _pixelList.Count;
-        
+
         private ColorMode _selectedColorMode = ColorMode.Black;
+
         public ColorMode SelectedColorMode
         {
             get => _selectedColorMode;
@@ -70,6 +79,7 @@ namespace Pixelizer.ViewModels
         }
 
         private int _threshold = 120;
+
         public int Threshold
         {
             get => _threshold;
@@ -77,6 +87,7 @@ namespace Pixelizer.ViewModels
         }
 
         private int _calculatedWidth;
+
         public int CalculatedWidth
         {
             get => _calculatedWidth;
@@ -84,20 +95,29 @@ namespace Pixelizer.ViewModels
         }
 
         private int _calculatedHeight;
+
         public int CalculatedHeight
         {
             get => _calculatedHeight;
             set => this.RaiseAndSetIfChanged(ref _calculatedHeight, value);
         }
 
-        private int _adaptiveBrushSize = 3;
+        private int _adaptiveBrushSize = 9;
         public int AdaptiveBrushSize
         {
             get => _adaptiveBrushSize;
             set => this.RaiseAndSetIfChanged(ref _adaptiveBrushSize, value);
         }
 
+        private int _adaptiveOffset = 7;
+        public int AdaptiveOffset
+        {
+            get => _adaptiveOffset;
+            set => this.RaiseAndSetIfChanged(ref _adaptiveOffset, value);
+        }
+
         private ImageInfo? _imagePath;
+
         public ImageInfo? ImagePath
         {
             get => _imagePath;
@@ -105,6 +125,7 @@ namespace Pixelizer.ViewModels
         }
 
         private Bitmap? _sourceImage;
+
         public Bitmap? SourceImage
         {
             get => _sourceImage;
@@ -112,6 +133,7 @@ namespace Pixelizer.ViewModels
         }
 
         private Bitmap? _targetImage;
+
         public Bitmap? TargetImage
         {
             get => _targetImage;
@@ -119,7 +141,7 @@ namespace Pixelizer.ViewModels
         }
 
         private List<(double, double)> _pixelList = new();
-        
+
         public GcodeConfig GcodeConfig { get; }
 
         private System.Drawing.Bitmap? _currentImage;
@@ -127,17 +149,21 @@ namespace Pixelizer.ViewModels
         public ReactiveCommand<Unit, Unit> ConvertToGcode { get; }
         private ReactiveCommand<Unit, Unit> ConvertImageCommand { get; }
         private ReactiveCommand<Unit, Unit> ExportImageCommand { get; }
-        
+        private ReactiveCommand<Unit, Unit> CancelCommand { get; }
+
         public MainWindowViewModel()
         {
             GcodeConfig = new GcodeConfig();
             ConvertToGcode = ReactiveCommand.CreateFromTask(Convert);
-            ConvertImageCommand = ReactiveCommand.CreateFromTask(ConvertImage);
+            ConvertImageCommand = ReactiveCommand.CreateFromObservable(
+                () => Observable.StartAsync(ConvertImage)
+                    .TakeUntil(CancelCommand));
             ExportImageCommand = ReactiveCommand.CreateFromTask(ExportImage);
-            
+            CancelCommand = ReactiveCommand.Create(() => { }, ConvertImageCommand.IsExecuting);
+
             var imageChanged = this.WhenAnyValue(x => x.ImagePath)
                 .Where(x => x != null);
-            
+
             imageChanged
                 .Do(LoadImage!)
                 .Subscribe();
@@ -176,34 +202,46 @@ namespace Pixelizer.ViewModels
                 .Select(_ => Unit.Default);
             var brushSizeChanged = this.WhenAnyValue(x => x.AdaptiveBrushSize)
                 .Select(_ => Unit.Default);
+            var offsetChanged = this.WhenAnyValue(x => x.AdaptiveOffset)
+                .Select(_ => Unit.Default);
             var strategyChanged = this.WhenAnyValue(x => x.SelectedPixelStrategy)
                 .Select(_ => Unit.Default);
-            
-            calcHeightChanged
+
+            var inputsChanged = calcHeightChanged
                 .Merge(calcWidthChanged)
                 .Merge(imageChanged.Select(_ => Unit.Default))
                 .Merge(thresholdChanged)
                 .Merge(colorModeChanged)
                 .Merge(brushSizeChanged)
                 .Merge(strategyChanged)
+                .Merge(offsetChanged);
+
+            inputsChanged.InvokeCommand(this, x => x.CancelCommand);
+            
+            inputsChanged
                 .Throttle(TimeSpan.FromMilliseconds(500))
                 .InvokeCommand(this, x => x.ConvertImageCommand);
 
             this.WhenAnyValue(x => x.PixelCount)
                 .Do(CalculateTime)
                 .Subscribe();
-            
+
             _isBusy = ConvertImageCommand.IsExecuting
                 .Merge(ConvertToGcode.IsExecuting)
                 .ToProperty(this, x => x.IsBusy);
+
+            _isAdaptiveThresholding = this.WhenAnyValue(x => x.SelectedPixelStrategy)
+                .Select(x => x == 1)
+                .ToProperty(this, x => x.IsAdaptiveThresholding);
+
+            _hasImage = this.WhenAnyValue(x => x.ImagePath)
+                .Select(x => x != null)
+                .ToProperty(this, x => x.HasImage);
         }
 
         private void CalculateTime(int count)
         {
-            Task.Run(() =>
-            {
-                
-            });
+            Task.Run(() => { });
         }
 
         private async Task ExportImage()
@@ -223,11 +261,11 @@ namespace Pixelizer.ViewModels
         private async Task<string?> GetSaveFileName(string extension)
         {
             SaveFileDialog dialog = new();
-            
+
             dialog.Filters.Add(new FileDialogFilter { Name = extension, Extensions = { extension } });
             dialog.DefaultExtension = extension;
             dialog.InitialFileName = "result";
-            
+
             if (Application.Current.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 var window = desktop.MainWindow;
@@ -240,9 +278,9 @@ namespace Pixelizer.ViewModels
 
         private async Task Convert()
         {
-            if (_currentImage == null) 
+            if (_currentImage == null)
                 return;
-            
+
             var path = await GetSaveFileName("gcode");
             if (path == null)
             {
@@ -264,7 +302,7 @@ namespace Pixelizer.ViewModels
                 return;
             var sourceImageSize = SourceImage.Size;
             var aspect = Width / sourceImageSize.Width;
-            Height = (int) (sourceImageSize.Height * aspect);
+            Height = (int)(sourceImageSize.Height * aspect);
         }
 
         private void CalculateWidth()
@@ -273,15 +311,17 @@ namespace Pixelizer.ViewModels
             {
                 CalculatedWidth = 0;
             }
+
             CalculatedWidth = (int)(Width / GcodeConfig.PenWidth);
         }
-        
+
         private void CalculateHeight()
         {
             if (GcodeConfig.PenWidth == 0)
             {
                 CalculatedHeight = 0;
             }
+
             CalculatedHeight = (int)(Height / GcodeConfig.PenWidth);
         }
 
@@ -291,20 +331,20 @@ namespace Pixelizer.ViewModels
             {
                 var stream = File.OpenRead(info.Path);
                 SourceImage = Bitmap.DecodeToWidth(stream, info.Width);
-                
+
                 Height = info.Height;
                 Width = info.Width;
             }
         }
 
-        private async Task ConvertImage()
+        private async Task ConvertImage(CancellationToken token)
         {
-            TargetImage = await Task.Run(() 
+            TargetImage = await Task.Run(()
                 =>
             {
                 if (SourceImage == null || GcodeConfig.PenWidth == 0)
                     return null;
-                
+
                 var width = (int)(Width / GcodeConfig.PenWidth);
                 var height = (int)(Height / GcodeConfig.PenWidth);
 
@@ -317,11 +357,11 @@ namespace Pixelizer.ViewModels
 
                 IPixelizerService strategy = SelectedPixelStrategy switch
                 {
-                    0 => new ThresholdingPixelizerService(),
-                    _ => new AdaptiveThresholdingPixelizerService(AdaptiveBrushSize)
+                    0 => new ThresholdingPixelizerService(Threshold),
+                    _ => new AdaptiveThresholdingPixelizerService(AdaptiveBrushSize, AdaptiveOffset)
                 };
 
-                strategy.ConvertToPixelImage(sysBitmap, SelectedColorMode, Threshold);
+                strategy.ConvertToPixelImage(sysBitmap, SelectedColorMode, token);
 
                 // Loading Avalonia Bitmap from MemoryStream did not work
                 // Therefore, saving to temp file on disk
@@ -331,7 +371,7 @@ namespace Pixelizer.ViewModels
                 _currentImage = sysBitmap;
                 _pixelList = _currentImage.GetPixels(GcodeConfig);
                 this.RaisePropertyChanged(nameof(PixelCount));
-                
+
                 var loaded = new Bitmap(tempFile);
                 File.Delete(tempFile);
 
@@ -339,6 +379,4 @@ namespace Pixelizer.ViewModels
             });
         }
     }
-    
-    
 }

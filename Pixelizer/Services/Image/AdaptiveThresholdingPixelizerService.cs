@@ -1,7 +1,6 @@
 using System;
-using System.Diagnostics.Tracing;
 using System.Drawing;
-using Emgu.CV;
+using System.Threading;
 using Pixelizer.Models;
 using Pixelizer.Services.Image.Abstractions;
 
@@ -9,31 +8,34 @@ namespace Pixelizer.Services.Image
 {
     public class AdaptiveThresholdingPixelizerService : IPixelizerService
     {
-        private int Offset = 10;
         private readonly int _brushSize;
+        private readonly int _offset;
 
-        public AdaptiveThresholdingPixelizerService(int brushSize)
+        public AdaptiveThresholdingPixelizerService(int brushSize, int offset)
         {
-            if (brushSize % 2 == 0)
-                throw new ArgumentException("BrushSize must be an odd number");
             _brushSize = brushSize;
+            _offset = offset;
         }
         
-        public void ConvertToPixelImage(Bitmap bmp, ColorMode colorMode, int threshold)
+        public void ConvertToPixelImage(Bitmap bmp, ColorMode colorMode, CancellationToken token)
         {
             var imgArray = new bool[bmp.Height, bmp.Width];
             for (var y = 0; y < bmp.Height; y++)
             for (var x = 0; x < bmp.Width; x++)
             {
-                var average = GetFrameAverage(bmp, x, y, colorMode);
+                if (token.IsCancellationRequested)
+                    return;
+                var average = GetFrameAverage(bmp, x, y, colorMode, token);
                 var pixelAverage = GetPixelAverage(bmp, x, y);
 
-                imgArray[y, x] = pixelAverage < average - Offset;
+                imgArray[y, x] = pixelAverage < average - _offset;
             }
 
             for (var y = 0; y < bmp.Height; y++)
             for (var x = 0; x < bmp.Width; x++)
             {
+                if (token.IsCancellationRequested)
+                    return;
                 var isBlack = imgArray[y, x];
                 bmp.SetPixel(x, y, isBlack ? Color.Black : Color.White);
             }
@@ -53,7 +55,7 @@ namespace Pixelizer.Services.Image
             return currentAverage;
         }
 
-        private double GetFrameAverage(Bitmap bmp, int x, int y, ColorMode colorMode)
+        private double GetFrameAverage(Bitmap bmp, int x, int y, ColorMode colorMode, CancellationToken token)
         {
             var offset = _brushSize / 2;
             var leftX = Math.Max(x - offset, 0);
@@ -67,6 +69,8 @@ namespace Pixelizer.Services.Image
             for(var currentY = topY; currentY <= bottomY; currentY++)
             for (var currentX = leftX; currentX <= rightX; currentX++)
             {
+                if (token.IsCancellationRequested)
+                    return 0;
                 var color = bmp.GetPixel(currentX, currentY);
                 int currentAverage;
                 if (color.A == 0)

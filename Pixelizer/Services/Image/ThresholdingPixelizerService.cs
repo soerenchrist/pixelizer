@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Threading;
 using Pixelizer.Models;
 using Pixelizer.Services.Image.Abstractions;
 
@@ -10,13 +11,22 @@ namespace Pixelizer.Services.Image
     /// </summary>
     public class ThresholdingPixelizerService : IPixelizerService
     {
-        public void ConvertToPixelImage(Bitmap bmp, ColorMode colorMode, int threshold)
+        private readonly int _threshold;
+
+        public ThresholdingPixelizerService(int threshold)
+        {
+            _threshold = threshold;
+        }
+        
+        public void ConvertToPixelImage(Bitmap bmp, ColorMode colorMode, CancellationToken token)
         {
             Color c;
 
             for (int y = 0; y < bmp.Height; y++)
             for (int x = 0; x < bmp.Width; x++)
             {
+                if (token.IsCancellationRequested)
+                    return;
                 c = bmp.GetPixel(x, y);
                 int average;
                 if (c.A == 0)
@@ -59,11 +69,11 @@ namespace Pixelizer.Services.Image
 
                 if (colorMode == ColorMode.Black)
                 {
-                    bmp.SetPixel(x, y, average < threshold ? selectionColor : Color.White);
+                    bmp.SetPixel(x, y, average < _threshold ? selectionColor : Color.White);
                 }
                 else
                 {
-                    bmp.SetPixel(x, y , average > threshold ? selectionColor : Color.White);
+                    bmp.SetPixel(x, y , average > _threshold ? selectionColor : Color.White);
                 }
 
             }

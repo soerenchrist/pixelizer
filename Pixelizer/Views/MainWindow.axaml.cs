@@ -1,8 +1,10 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.ReactiveUI;
 using Pixelizer.Models;
@@ -75,28 +77,29 @@ namespace Pixelizer.Views
             }
             
             ViewModel.ImagePath = ImageInfo.FromPath(file);
+        }
 
-            //ToCcitt(file);
-            //
-            // var bitmap = new Bitmap(File.OpenRead(file));
-            // using var graphics = Graphics.FromImage(bitmap);
-            // var grayMatrix = new float[][] { 
-            //     new[] { 0.299f, 0.299f, 0.299f, 0, 0 }, 
-            //     new[] { 0.587f, 0.587f, 0.587f, 0, 0 }, 
-            //     new[] { 0.114f, 0.114f, 0.114f, 0, 0 }, 
-            //     new[] { 0f,      0f,      0f,      1f, 0f }, 
-            //     new[] { 0f,      0f,      0f,      0f, 1f } 
-            // };
-            //
-            // var ia = new ImageAttributes();
-            // ia.SetColorMatrix(new ColorMatrix(grayMatrix));
-            // ia.SetThreshold(0.1f); // Change this threshold as needed
-            // var rc = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
-            // graphics.DrawImage(bitmap, rc, 0, 0, bitmap.Width, bitmap.Height, GraphicsUnit.Pixel, ia);
-            //
-            // var newBitmap = new Bitmap(bitmap.Width, bitmap.Height, graphics);
+        private async void DropPanel_OnTapped(object? sender, RoutedEventArgs e)
+        {
+            var openFileDialog = new OpenFileDialog
+            {
+                Filters = new List<FileDialogFilter>
+                {
+                    new()
+                    {
+                        Extensions = new() { "jpg", "png", "gif" },
+                        Name = "Images"
+                    }
+                },
+                Title = "Select image",
+                AllowMultiple = false,
+            };
 
-            // newBitmap.Save(@"C:\Users\chris\Desktop\Test.jpg");
+            var result = await openFileDialog.ShowAsync(this);
+            if (result.Length == 0)
+                return;
+            var filePath = result[0];
+            ViewModel.ImagePath = ImageInfo.FromPath(filePath);
         }
     }
 }

@@ -10,140 +10,183 @@
         Title="Pixelizer">
 
     <Design.DataContext>
-        <vm:MainWindowViewModel/>
+        <vm:MainWindowViewModel />
     </Design.DataContext>
 
-    <Grid 
+    <Grid
+        RowDefinitions="Auto, *"
         ColumnDefinitions="*,*,*"
         Margin="10">
-        <ScrollViewer Grid.Column="0">
-            <StackPanel
-                Spacing="5"
-                Margin="8">
-                <Label Content="Width" />
-                <Grid ColumnDefinitions="*, Auto">
-                    <TextBox Text="{Binding Width}"
-                             IsEnabled="{Binding !IsBusy}"
-                             Watermark="Width"/>
-                    <TextBlock Text="mm" 
-                               VerticalAlignment="Center"
-                               Margin="5 0"
-                               Grid.Column="1"/>
-                </Grid>
-                
-                <Label Content="Height" />
-                <Grid ColumnDefinitions="*, Auto">
-                    <TextBox Text="{Binding Height}"
-                             IsEnabled="False"
-                             Watermark="Height"/>
-                    <TextBlock Text="mm" 
-                               VerticalAlignment="Center"
-                               Margin="5 0"
-                               Grid.Column="1"/>
-                </Grid>
-                
-                <Label Content="Pen width" />
-                <Grid ColumnDefinitions="*, Auto">
-                    <TextBox Text="{Binding GcodeConfig.PenWidth}"
-                             IsEnabled="{Binding !IsBusy}"
-                             Watermark="Pen width"/>
-                    <TextBlock Text="mm" 
-                               VerticalAlignment="Center"
-                               Margin="5 0"
-                               Grid.Column="1"/>
-                </Grid>
-                
-                <Label Content="Pixel strategy" />
-                <ComboBox IsEnabled="{Binding !IsBusy}"
-                          Items="{Binding PixelStrategies}"
-                          SelectedIndex="{Binding SelectedPixelStrategy}" />
-                
-                <Label Content="Color mode"/>
-                <ComboBox 
-                    IsEnabled="{Binding !IsBusy}"
-                    Items="{Binding ColorModes}"
-                    SelectedItem="{Binding SelectedColorMode}" />
-                
-                
-                <Label Content="Adaptive Brush size" />
-                <TextBox Text="{Binding AdaptiveBrushSize}"
-                         IsEnabled="{Binding !IsBusy}"
-                         Watermark="Adaptive brush size" />
-                
-                <Label Content="Threshold" />
-                <TextBox Text="{Binding Threshold}"
-                         IsEnabled="{Binding !IsBusy}"
-                         Watermark="Threshold" />
-                
-                <Label Content="Z axis bottom" />
-                <TextBox Text="{Binding GcodeConfig.ZAxisDown}"
-                         IsEnabled="{Binding !IsBusy}"
-                         Watermark="Z axis bottom" />
-                <Label Content="Z axis top" />
-                <TextBox Text="{Binding GcodeConfig.ZAxisUp}"
-                         IsEnabled="{Binding !IsBusy}"
-                         Watermark="Z axis top" />
-                <Label Content="Feed Rate" />
-                <TextBox Text="{Binding GcodeConfig.FeedRate}"
-                         IsEnabled="{Binding !IsBusy}" />
-                <Label Content="Offset X" />
-                <TextBox Text="{Binding GcodeConfig.OffsetX}"
-                         IsEnabled="{Binding !IsBusy}" />
-                <Label Content="Offset Y" />
-                <TextBox Text="{Binding GcodeConfig.OffsetY}"
-                         IsEnabled="{Binding !IsBusy}" />
-                
-                <CheckBox IsChecked="{Binding GcodeConfig.AutoHome}" 
-                          Content="Auto Home" />
-                <CheckBox IsChecked="{Binding GcodeConfig.DrawFrame}" 
-                          Content="Draw Frame" />
-                <Label Content="Calculated width"/>
-                <Grid ColumnDefinitions="*, Auto">
-                    <TextBox Text="{Binding CalculatedWidth}"
-                             IsEnabled="False"/>
-                    <TextBlock Text="px" 
-                               VerticalAlignment="Center"
-                               Margin="5 0"
-                               Grid.Column="1"/>
-                </Grid>
-                
-                <Label Content="Calculated height"/>
-                <Grid ColumnDefinitions="*, Auto">
-                    <TextBox Text="{Binding CalculatedHeight}"
-                             IsEnabled="False"/>
-                    <TextBlock Text="px" 
-                               VerticalAlignment="Center"
-                               Margin="5 0"
-                               Grid.Column="1"/>
-                </Grid>
-                
+        <TabControl Grid.Column="0"
+                    Grid.Row="0"
+                    Grid.RowSpan="2">
+            <TabItem Header="Image Conversion">
+                <StackPanel
+                    Spacing="5"
+                    Margin="8">
+                    <Label Content="Width" />
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBox Text="{Binding Width}"
+                                 IsEnabled="{Binding HasImage}"
+                                 Watermark="Width" />
+                        <TextBlock Text="mm"
+                                   VerticalAlignment="Center"
+                                   Margin="5 0"
+                                   Grid.Column="1" />
+                    </Grid>
+
+                    <Label Content="Height" />
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBox Text="{Binding Height}"
+                                 IsEnabled="False"
+                                 Watermark="Height" />
+                        <TextBlock Text="mm"
+                                   VerticalAlignment="Center"
+                                   Margin="5 0"
+                                   Grid.Column="1" />
+                    </Grid>
+
+                    <Label Content="Pen width" />
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBox Text="{Binding GcodeConfig.PenWidth}"
+                                 IsEnabled="{Binding HasImage}"
+                                 Watermark="Pen width" />
+                        <TextBlock Text="mm"
+                                   VerticalAlignment="Center"
+                                   Margin="5 0"
+                                   Grid.Column="1" />
+                    </Grid>
+
+                    <Label Content="Pixel strategy" />
+                    <ComboBox IsEnabled="{Binding HasImage}"
+                              Items="{Binding PixelStrategies}"
+                              SelectedIndex="{Binding SelectedPixelStrategy}" />
+
+                    <Label Content="Adaptive Brush size"
+                           IsVisible="{Binding IsAdaptiveThresholding}" />
+                    <NumericUpDown Value="{Binding AdaptiveBrushSize}"
+                             IsEnabled="{Binding HasImage}"
+                             IsVisible="{Binding IsAdaptiveThresholding}"
+                             Increment="2"
+                             Minimum="3"
+                             Maximum="31"
+                             Watermark="Adaptive brush size" />
+                    
+                    <Label Content="Adaptive Offset"
+                           IsVisible="{Binding IsAdaptiveThresholding}" />
+                    <NumericUpDown Value="{Binding AdaptiveOffset}"
+                                   IsEnabled="{Binding HasImage}"
+                                   IsVisible="{Binding IsAdaptiveThresholding}"
+                                   Increment="1"
+                                   Minimum="0"
+                                   Maximum="30"
+                                   Watermark="Adaptive offset" />
+
+                    <Label Content="Threshold"
+                           IsVisible="{Binding !IsAdaptiveThresholding}" />
+                    <TextBox Text="{Binding Threshold}"
+                             IsVisible="{Binding !IsAdaptiveThresholding}"
+                             IsEnabled="{Binding HasImage}"
+                             Watermark="Threshold" />
+
+                    <Label Content="Color mode" />
+                    <ComboBox
+                        IsEnabled="{Binding HasImage}"
+                        Items="{Binding ColorModes}"
+                        SelectedItem="{Binding SelectedColorMode}" />
+
+                    <Grid Height="100" />
+
+                    <Label Content="Calculated width" />
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBox Text="{Binding CalculatedWidth}"
+                                 IsEnabled="False" />
+                        <TextBlock Text="px"
+                                   VerticalAlignment="Center"
+                                   Margin="5 0"
+                                   Grid.Column="1" />
+                    </Grid>
+
+                    <Label Content="Calculated height" />
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBox Text="{Binding CalculatedHeight}"
+                                 IsEnabled="False" />
+                        <TextBlock Text="px"
+                                   VerticalAlignment="Center"
+                                   Margin="5 0"
+                                   Grid.Column="1" />
+                    </Grid>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="GCode-Options">
+                <StackPanel Spacing="5">
+                    <Label Content="Z axis bottom" />
+                    <TextBox Text="{Binding GcodeConfig.ZAxisDown}"
+                             IsEnabled="{Binding HasImage}"
+                             Watermark="Z axis bottom" />
+                    <Label Content="Z axis top" />
+                    <TextBox Text="{Binding GcodeConfig.ZAxisUp}"
+                             IsEnabled="{Binding HasImage}"
+                             Watermark="Z axis top" />
+                    <Label Content="Feed Rate" />
+                    <TextBox Text="{Binding GcodeConfig.FeedRate}"
+                             IsEnabled="{Binding HasImage}" />
+                    <Label Content="Offset X" />
+                    <TextBox Text="{Binding GcodeConfig.OffsetX}"
+                             IsEnabled="{Binding HasImage}" />
+                    <Label Content="Offset Y" />
+                    <TextBox Text="{Binding GcodeConfig.OffsetY}"
+                             IsEnabled="{Binding HasImage}" />
+
+                    <CheckBox IsChecked="{Binding GcodeConfig.AutoHome}"
+                              Content="Auto Home" />
+                    <CheckBox IsChecked="{Binding GcodeConfig.DrawFrame}"
+                              Content="Draw Frame" />
+
+                    <TextBlock Text="{Binding PixelCount}" />
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+
+        <Grid Column="2"
+              Grid.Row="0">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Margin="20">
+                <TextBlock Text="Dot count: " />
                 <TextBlock Text="{Binding PixelCount}" />
-                
             </StackPanel>
-        </ScrollViewer>
-        
+        </Grid>
+
+
         <Image Grid.Column="1"
+               Grid.Row="1"
                Source="{Binding SourceImage}"
                Stretch="Uniform"
                x:Name="SourceImage"
+               DoubleTapped="DropPanel_OnTapped"
                DragDrop.AllowDrop="True"
                IsVisible="{Binding SourceImage, Converter={x:Static ObjectConverters.IsNotNull}}" />
         <Panel
             IsVisible="{Binding SourceImage, Converter={x:Static ObjectConverters.IsNull}}"
             Grid.Column="1"
+            Grid.Row="1"
             x:Name="DropPanel"
             Background="#eeeeee"
+            Tapped="DropPanel_OnTapped"
             DragDrop.AllowDrop="True">
             <TextBlock Text="Drop image here"
                        HorizontalAlignment="Center"
-                       VerticalAlignment="Center"/>    
+                       VerticalAlignment="Center" />
         </Panel>
-        
+
         <Image Grid.Column="2"
+               Grid.Row="1"
                Source="{Binding TargetImage}"
                Stretch="Uniform" />
-        
+
         <StackPanel Grid.Column="2"
+                    Grid.Row="1"
                     Spacing="5"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
@@ -157,10 +200,10 @@
                     VerticalAlignment="Bottom"
                     Command="{Binding ConvertToGcode}" />
         </StackPanel>
-        
+
         <ProgressBar IsIndeterminate="True"
                      Grid.Column="0"
-                     Grid.Row="0"
+                     Grid.Row="1"
                      Grid.ColumnSpan="3"
                      VerticalAlignment="Top"
                      IsVisible="{Binding IsBusy}" />
