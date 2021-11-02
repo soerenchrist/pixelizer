@@ -17,28 +17,32 @@ namespace Pixelizer.Services.Image
             _offset = offset;
         }
         
-        public void ConvertToPixelImage(Bitmap bmp, ColorMode colorMode, CancellationToken token)
+        public Bitmap? ConvertToPixelImage(Bitmap bmp, ColorMode colorMode, CancellationToken token)
         {
             var imgArray = new bool[bmp.Height, bmp.Width];
             for (var y = 0; y < bmp.Height; y++)
             for (var x = 0; x < bmp.Width; x++)
             {
                 if (token.IsCancellationRequested)
-                    return;
+                    return null;
                 var average = GetFrameAverage(bmp, x, y, colorMode, token);
                 var pixelAverage = GetPixelAverage(bmp, x, y);
 
                 imgArray[y, x] = pixelAverage < average - _offset;
             }
 
+            var newBitmap = new Bitmap(bmp.Width, bmp.Height);
+
             for (var y = 0; y < bmp.Height; y++)
             for (var x = 0; x < bmp.Width; x++)
             {
                 if (token.IsCancellationRequested)
-                    return;
+                    return null;
                 var isBlack = imgArray[y, x];
-                bmp.SetPixel(x, y, isBlack ? Color.Black : Color.White);
+                newBitmap.SetPixel(x, y, isBlack ? Color.Black : Color.White);
             }
+
+            return newBitmap;
         }
 
         private double GetPixelAverage(Bitmap bmp, int x, int y)

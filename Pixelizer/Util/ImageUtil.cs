@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using Pixelizer.Models;
 
 namespace Pixelizer.Util
@@ -27,6 +28,23 @@ namespace Pixelizer.Util
             }
 
             return dots;
+        }
+
+        public static Avalonia.Media.Imaging.Bitmap ToAvaloniaBitmap(this Bitmap bitmap)
+        {
+            var tempFile = Path.GetTempFileName();
+            bitmap.Save(tempFile);
+
+            var result = new Avalonia.Media.Imaging.Bitmap(tempFile);
+            File.Delete(tempFile);
+            return result;
+        }
+
+        public static Bitmap ToSystemBitmap(this Avalonia.Media.Imaging.Bitmap bitmap)
+        {
+            using var memoryStream = new MemoryStream();
+            bitmap.Save(memoryStream);
+            return new Bitmap(memoryStream);
         }
     }
 }

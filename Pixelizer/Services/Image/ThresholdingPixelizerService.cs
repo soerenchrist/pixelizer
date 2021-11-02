@@ -18,15 +18,15 @@ namespace Pixelizer.Services.Image
             _threshold = threshold;
         }
         
-        public void ConvertToPixelImage(Bitmap bmp, ColorMode colorMode, CancellationToken token)
+        public Bitmap? ConvertToPixelImage(Bitmap bmp, ColorMode colorMode, CancellationToken token)
         {
             Color c;
-
+            var newBitmap = new Bitmap(bmp.Width, bmp.Height);
             for (int y = 0; y < bmp.Height; y++)
             for (int x = 0; x < bmp.Width; x++)
             {
                 if (token.IsCancellationRequested)
-                    return;
+                    return null;
                 c = bmp.GetPixel(x, y);
                 int average;
                 if (c.A == 0)
@@ -69,14 +69,16 @@ namespace Pixelizer.Services.Image
 
                 if (colorMode == ColorMode.Black)
                 {
-                    bmp.SetPixel(x, y, average < _threshold ? selectionColor : Color.White);
+                    newBitmap.SetPixel(x, y, average < _threshold ? selectionColor : Color.White);
                 }
                 else
                 {
-                    bmp.SetPixel(x, y , average > _threshold ? selectionColor : Color.White);
+                    newBitmap.SetPixel(x, y , average > _threshold ? selectionColor : Color.White);
                 }
 
             }
+
+            return newBitmap;
         }
     }
 }

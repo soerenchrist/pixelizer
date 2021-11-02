@@ -351,9 +351,7 @@ namespace Pixelizer.ViewModels
                 var scaled = SourceImage.CreateScaledBitmap(new PixelSize(width, height));
                 if (scaled == null)
                     return null;
-                var memoryStream = new MemoryStream();
-                scaled.Save(memoryStream);
-                var sysBitmap = new System.Drawing.Bitmap(memoryStream);
+                var sysBitmap = scaled.ToSystemBitmap();
 
                 IPixelizerService strategy = SelectedPixelStrategy switch
                 {
@@ -361,22 +359,16 @@ namespace Pixelizer.ViewModels
                     _ => new AdaptiveThresholdingPixelizerService(AdaptiveBrushSize, AdaptiveOffset)
                 };
 
-                strategy.ConvertToPixelImage(sysBitmap, SelectedColorMode, token);
-
-                // Loading Avalonia Bitmap from MemoryStream did not work
-                // Therefore, saving to temp file on disk
-                var tempFile = Path.GetTempFileName();
-                sysBitmap.Save(tempFile);
-
-                _currentImage = sysBitmap;
+                var result = strategy.ConvertToPixelImage(sysBitmap, SelectedColorMode, token);
+                if (result == null)
+                    return null;
+                
+                _currentImage = result;
                 _pixelList = _currentImage.GetPixels(GcodeConfig);
                 this.RaisePropertyChanged(nameof(PixelCount));
-
-                var loaded = new Bitmap(tempFile);
-                File.Delete(tempFile);
-
-                return loaded;
-            });
+                
+                return result.ToAvaloniaBitmap();
+            }, token);
         }
     }
 }

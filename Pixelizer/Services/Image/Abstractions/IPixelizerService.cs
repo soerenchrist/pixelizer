@@ -6,6 +6,6 @@ namespace Pixelizer.Services.Image.Abstractions
 {
     public interface IPixelizerService
     {
-        void ConvertToPixelImage(Bitmap bmp, ColorMode colorMode, CancellationToken token);
+        Bitmap? ConvertToPixelImage(Bitmap bmp, ColorMode colorMode, CancellationToken token);
     }
 }
