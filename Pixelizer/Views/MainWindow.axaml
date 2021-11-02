@@ -192,11 +192,13 @@
                     HorizontalAlignment="Right"
                     VerticalAlignment="Bottom">
             <Button Content="Export Image"
+                    IsEnabled="{Binding HasImage}"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Bottom"
                     Command="{Binding ExportImageCommand}" />
             <Button Content="Convert to GCode"
                     HorizontalAlignment="Right"
+                    IsEnabled="{Binding HasImage}"
                     VerticalAlignment="Bottom"
                     Command="{Binding ConvertToGcode}" />
         </StackPanel>
