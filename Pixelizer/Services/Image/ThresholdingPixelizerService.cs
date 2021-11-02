@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Threading;
 using Pixelizer.Models;
 using Pixelizer.Services.Image.Abstractions;
+using Pixelizer.Util;
 
 namespace Pixelizer.Services.Image
 {
@@ -28,37 +29,9 @@ namespace Pixelizer.Services.Image
                 if (token.IsCancellationRequested)
                     return null;
                 c = bmp.GetPixel(x, y);
-                int average;
-                if (c.A == 0)
-                {
-                    average = colorMode switch
-                    {
-                        ColorMode.Black => 255,
-                        _ => 0,
-                    };
-                }
-                else
-                {
-                    switch (colorMode)
-                    {
-                        case ColorMode.Black:
-                            average = ((c.R + c.B + c.G) / 3);
-                            break;
-                        case ColorMode.Red:
-                            average = c.R > c.B && c.R > c.G ? c.R : 0;
-                            break;
-                        case ColorMode.Green:
-                            average = c.G > c.B && c.G > c.R ? c.G : 0;
-                            break;
-                        case ColorMode.Blue:
-                            average = c.B > c.R && c.B > c.G ? c.B : 0;
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException(nameof(colorMode), colorMode, null);
-                    }
-                }
+                var average = c.GetAverageColor(colorMode);
 
-                Color selectionColor = colorMode switch
+                var selectionColor = colorMode switch
                 {
                     ColorMode.Black => Color.Black,
                     ColorMode.Blue => Color.Blue,

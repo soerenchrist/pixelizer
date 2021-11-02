@@ -157,7 +157,7 @@ namespace Pixelizer.ViewModels
             ConvertToGcode = ReactiveCommand.CreateFromTask(Convert);
             ConvertImageCommand = ReactiveCommand.CreateFromObservable(
                 () => Observable.StartAsync(ConvertImage)
-                    .TakeUntil(CancelCommand));
+                    .TakeUntil(CancelCommand!));
             ExportImageCommand = ReactiveCommand.CreateFromTask(ExportImage);
             CancelCommand = ReactiveCommand.Create(() => { }, ConvertImageCommand.IsExecuting);
 

@@ -3,9 +3,14 @@ using System.Drawing;
 using System.Threading;
 using Pixelizer.Models;
 using Pixelizer.Services.Image.Abstractions;
+using Pixelizer.Util;
 
 namespace Pixelizer.Services.Image
 {
+    /// <summary>
+    /// Check a field of brushSize pixels around the current pixel. The average of the field is the threshold
+    /// Bigger than threshold = black, smaller than threshold = white
+    /// </summary>
     public class AdaptiveThresholdingPixelizerService : IPixelizerService
     {
         private readonly int _brushSize;
@@ -26,7 +31,7 @@ namespace Pixelizer.Services.Image
                 if (token.IsCancellationRequested)
                     return null;
                 var average = GetFrameAverage(bmp, x, y, colorMode, token);
-                var pixelAverage = GetPixelAverage(bmp, x, y);
+                var pixelAverage = GetPixelAverage(bmp, x, y, colorMode);
 
                 imgArray[y, x] = pixelAverage < average - _offset;
             }
@@ -39,24 +44,25 @@ namespace Pixelizer.Services.Image
                 if (token.IsCancellationRequested)
                     return null;
                 var isBlack = imgArray[y, x];
-                newBitmap.SetPixel(x, y, isBlack ? Color.Black : Color.White);
+                
+                var selectionColor = colorMode switch
+                {
+                    ColorMode.Black => Color.Black,
+                    ColorMode.Blue => Color.Blue,
+                    ColorMode.Red => Color.Red,
+                    ColorMode.Green => Color.Green,
+                    _ => throw new ArgumentOutOfRangeException(nameof(colorMode), colorMode, null)
+                };
+                newBitmap.SetPixel(x, y, isBlack ? selectionColor : Color.White);
             }
 
             return newBitmap;
         }
 
-        private double GetPixelAverage(Bitmap bmp, int x, int y)
+        private double GetPixelAverage(Bitmap bmp, int x, int y, ColorMode colorMode)
         {
             var color = bmp.GetPixel(x, y);
-            int currentAverage;
-            if (color.A == 0)
-                currentAverage = 255;
-            else
-            {
-                currentAverage = (color.R + color.B + color.G) / 3;
-            }
-
-            return currentAverage;
+            return color.GetAverageColor(colorMode);
         }
 
         private double GetFrameAverage(Bitmap bmp, int x, int y, ColorMode colorMode, CancellationToken token)
@@ -76,14 +82,8 @@ namespace Pixelizer.Services.Image
                 if (token.IsCancellationRequested)
                     return 0;
                 var color = bmp.GetPixel(currentX, currentY);
-                int currentAverage;
-                if (color.A == 0)
-                    currentAverage = 255;
-                else
-                {
-                    currentAverage = (color.R + color.B + color.G) / 3;
-                }
-
+                var currentAverage = color.GetAverageColor(colorMode);
+                
                 average += currentAverage;
                 pixelCount++;
             }

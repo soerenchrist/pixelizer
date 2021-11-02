@@ -46,5 +46,25 @@ namespace Pixelizer.Util
             bitmap.Save(memoryStream);
             return new Bitmap(memoryStream);
         }
+
+        public static double GetAverageColor(this Color color, ColorMode colorMode)
+        {
+            if (color.A == 0)
+            {
+                return colorMode switch
+                {
+                    ColorMode.Black => 255,
+                    _ => 0,
+                };
+            }
+            return colorMode switch
+            {
+                ColorMode.Black => ((color.R + color.B + color.G) / 3),
+                ColorMode.Red => color.R > color.B && color.R > color.G ? color.R : 0,
+                ColorMode.Green => color.G > color.B && color.G > color.R ? color.G : 0,
+                ColorMode.Blue => color.B > color.R && color.B > color.G ? color.B : 0,
+                _ => throw new ArgumentOutOfRangeException(nameof(colorMode), colorMode, null)
+            };
+        }
     }
 }
