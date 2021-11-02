@@ -1,6 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using Pixelizer.Util;
 
 namespace Pixelizer.Services.Strategies
 {
@@ -14,7 +14,7 @@ namespace Pixelizer.Services.Strategies
             var minIndex = -1;
             for (int i = 0; i < pixels.Count; i++)
             {
-                var distance = GetDistance(current, pixels[i]);
+                var distance = current.DistanceTo(pixels[i]);
                 if (distance < currentMin)
                 {
                     minIndex = i;
@@ -23,16 +23,6 @@ namespace Pixelizer.Services.Strategies
             }
 
             return pixels[minIndex];
-        }
-
-        private double GetDistance((double, double) current, (double, double) other)
-        {
-            var deltaX = Math.Abs(current.Item1 - other.Item1);
-            var deltaY = Math.Abs(current.Item2 - other.Item2);
-
-            var distance = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
-
-            return distance;
         }
 
         public List<(double, double)> GetPixelOrder(List<(double, double)> unorderedList)

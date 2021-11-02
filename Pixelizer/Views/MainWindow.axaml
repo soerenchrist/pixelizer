@@ -65,13 +65,13 @@
                     <Label Content="Adaptive Brush size"
                            IsVisible="{Binding IsAdaptiveThresholding}" />
                     <NumericUpDown Value="{Binding AdaptiveBrushSize}"
-                             IsEnabled="{Binding HasImage}"
-                             IsVisible="{Binding IsAdaptiveThresholding}"
-                             Increment="2"
-                             Minimum="3"
-                             Maximum="31"
-                             Watermark="Adaptive brush size" />
-                    
+                                   IsEnabled="{Binding HasImage}"
+                                   IsVisible="{Binding IsAdaptiveThresholding}"
+                                   Increment="2"
+                                   Minimum="3"
+                                   Maximum="31"
+                                   Watermark="Adaptive brush size" />
+
                     <Label Content="Adaptive Offset"
                            IsVisible="{Binding IsAdaptiveThresholding}" />
                     <NumericUpDown Value="{Binding AdaptiveOffset}"
@@ -142,20 +142,20 @@
                               Content="Auto Home" />
                     <CheckBox IsChecked="{Binding GcodeConfig.DrawFrame}"
                               Content="Draw Frame" />
-
-                    <TextBlock Text="{Binding PixelCount}" />
                 </StackPanel>
             </TabItem>
         </TabControl>
 
         <Grid Column="2"
-              Grid.Row="0">
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Right"
-                        Margin="20">
-                <TextBlock Text="Dot count: " />
-                <TextBlock Text="{Binding PixelCount}" />
-            </StackPanel>
+              Grid.Row="0"
+              ColumnDefinitions="Auto, Auto, Auto"
+              HorizontalAlignment="Right">
+            <TextBlock Grid.Column="0"
+                       Grid.Row="0"
+                       Text="Dot count: " />
+            <TextBlock Grid.Column="1"
+                       Grid.Row="0"
+                       Text="{Binding PixelCount}" />
         </Grid>
 
 

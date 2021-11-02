@@ -115,7 +115,7 @@ namespace Pixelizer.ViewModels
             get => _adaptiveOffset;
             set => this.RaiseAndSetIfChanged(ref _adaptiveOffset, value);
         }
-
+        
         private ImageInfo? _imagePath;
 
         public ImageInfo? ImagePath
@@ -142,7 +142,7 @@ namespace Pixelizer.ViewModels
 
         private List<(double, double)> _pixelList = new();
 
-        public GcodeConfig GcodeConfig { get; }
+        public GcodeConfig GcodeConfig { get; } = new();
 
         private System.Drawing.Bitmap? _currentImage;
 
@@ -151,9 +151,10 @@ namespace Pixelizer.ViewModels
         private ReactiveCommand<Unit, Unit> ExportImageCommand { get; }
         private ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
+        private readonly IPixelOrderStrategy _pixelOrderer = new NearestNeighborStrategy();
+
         public MainWindowViewModel()
         {
-            GcodeConfig = new GcodeConfig();
             ConvertToGcode = ReactiveCommand.CreateFromTask(Convert);
             ConvertImageCommand = ReactiveCommand.CreateFromObservable(
                 () => Observable.StartAsync(ConvertImage)
@@ -222,10 +223,6 @@ namespace Pixelizer.ViewModels
                 .Throttle(TimeSpan.FromMilliseconds(500))
                 .InvokeCommand(this, x => x.ConvertImageCommand);
 
-            this.WhenAnyValue(x => x.PixelCount)
-                .Do(CalculateTime)
-                .Subscribe();
-
             _isBusy = ConvertImageCommand.IsExecuting
                 .Merge(ConvertToGcode.IsExecuting)
                 .ToProperty(this, x => x.IsBusy);
@@ -237,11 +234,6 @@ namespace Pixelizer.ViewModels
             _hasImage = this.WhenAnyValue(x => x.ImagePath)
                 .Select(x => x != null)
                 .ToProperty(this, x => x.HasImage);
-        }
-
-        private void CalculateTime(int count)
-        {
-            Task.Run(() => { });
         }
 
         private async Task ExportImage()
@@ -289,7 +281,7 @@ namespace Pixelizer.ViewModels
 
             var result = await Task.Run(() =>
             {
-                var encoder = new GcodeEncoder(new NearestNeighborStrategy());
+                var encoder = new GcodeEncoder(_pixelOrderer);
                 return encoder.ConvertImageToGcode(_pixelList, _currentImage.Width, _currentImage.Height, GcodeConfig);
             });
 
