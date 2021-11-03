@@ -4,6 +4,7 @@
     <option name="projectPerEditor">
       <map>
         <entry key="Pixelizer/Views/MainWindow.axaml" value="Pixelizer/Pixelizer.csproj" />
+        <entry key="Pixelizer/Views/QuatTreeTester.axaml" value="Pixelizer/Pixelizer.csproj" />
       </map>
     </option>
   </component>

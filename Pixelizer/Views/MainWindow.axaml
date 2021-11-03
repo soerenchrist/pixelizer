@@ -3,12 +3,17 @@
         xmlns:vm="using:Pixelizer.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:converters="clr-namespace:Pixelizer.Converters"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Pixelizer.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         WindowState="Maximized"
         Title="Pixelizer">
 
+    <Window.Resources>
+        <converters:TimeConverter x:Key="TimeConverter" />
+    </Window.Resources>
+    
     <Design.DataContext>
         <vm:MainWindowViewModel />
     </Design.DataContext>
@@ -148,6 +153,7 @@
 
         <Grid Column="2"
               Grid.Row="0"
+              RowDefinitions="Auto, Auto, Auto"
               ColumnDefinitions="Auto, Auto, Auto"
               HorizontalAlignment="Right">
             <TextBlock Grid.Column="0"
@@ -156,6 +162,24 @@
             <TextBlock Grid.Column="1"
                        Grid.Row="0"
                        Text="{Binding PixelCount}" />
+            
+            
+            <TextBlock Grid.Column="0"
+                       Grid.Row="1"
+                       Text="Total distance: " />
+            <TextBlock Grid.Column="1"
+                       Grid.Row="1"
+                       Text="{Binding TotalDistance}" />
+            <TextBlock Grid.Column="2"
+                       Grid.Row="1"
+                       Text="m" />
+            
+            <TextBlock Grid.Column="0"
+                       Grid.Row="2"
+                       Text="Estimated time: " />
+            <TextBlock Grid.Column="1"
+                       Grid.Row="2"
+                       Text="{Binding TimeInMinutes, Converter={StaticResource TimeConverter}}" />
         </Grid>
 
 

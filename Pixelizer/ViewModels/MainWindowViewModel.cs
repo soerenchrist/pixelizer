@@ -46,6 +46,20 @@ namespace Pixelizer.ViewModels
             set => this.RaiseAndSetIfChanged(ref _height, value);
         }
 
+        private double _totalDistance;
+        public double TotalDistance
+        {
+            get => _totalDistance;
+            set => this.RaiseAndSetIfChanged(ref _totalDistance, value);
+        }
+
+        private int _timeInMinutes;
+        public int TimeInMinutes
+        {
+            get => _timeInMinutes;
+            set => this.RaiseAndSetIfChanged(ref _timeInMinutes, value);
+        }
+
         public List<ColorMode> ColorModes { get; } = new()
         {
             ColorMode.Black,
@@ -150,8 +164,9 @@ namespace Pixelizer.ViewModels
         private ReactiveCommand<Unit, Unit> ConvertImageCommand { get; }
         private ReactiveCommand<Unit, Unit> ExportImageCommand { get; }
         private ReactiveCommand<Unit, Unit> CancelCommand { get; }
+        private ReactiveCommand<Unit, Unit> CalculateTimeCommand { get; }
 
-        private readonly IPixelOrderStrategy _pixelOrderer = new NearestNeighborStrategy();
+        private readonly IPixelOrderStrategy _pixelOrderer = new KdTreeOrderStrategy();
 
         public MainWindowViewModel()
         {
@@ -161,6 +176,7 @@ namespace Pixelizer.ViewModels
                     .TakeUntil(CancelCommand!));
             ExportImageCommand = ReactiveCommand.CreateFromTask(ExportImage);
             CancelCommand = ReactiveCommand.Create(() => { }, ConvertImageCommand.IsExecuting);
+            CalculateTimeCommand = ReactiveCommand.Create(CalcuateTime);
 
             var imageChanged = this.WhenAnyValue(x => x.ImagePath)
                 .Where(x => x != null);
@@ -234,6 +250,26 @@ namespace Pixelizer.ViewModels
             _hasImage = this.WhenAnyValue(x => x.ImagePath)
                 .Select(x => x != null)
                 .ToProperty(this, x => x.HasImage);
+
+            this.WhenAnyValue(x => x.PixelCount)
+                .Select(_ => Unit.Default)
+                .InvokeCommand(this, x => x.CalculateTimeCommand);
+        }
+
+        private void CalcuateTime()
+        {
+            Task.Run(() =>
+            {
+                var ordered = _pixelOrderer.GetPixelOrder(_pixelList);
+                var distanceInMm = ordered.CalculateDistance();
+                var upDownMovementInMm = ordered.Count * 2 * (GcodeConfig.ZAxisUp - GcodeConfig.ZAxisDown);
+                TotalDistance = Math.Round((distanceInMm + upDownMovementInMm) / 1000, 2);
+
+                var movingTimeInMinutes = distanceInMm / GcodeConfig.FeedRate;
+                var upDownMovementTime = upDownMovementInMm / GcodeConfig.FeedRate;
+                
+                TimeInMinutes = (int)(movingTimeInMinutes + upDownMovementTime);
+            });
         }
 
         private async Task ExportImage()
