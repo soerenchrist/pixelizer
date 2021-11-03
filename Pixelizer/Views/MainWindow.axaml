@@ -143,6 +143,12 @@
                     <TextBox Text="{Binding GcodeConfig.OffsetY}"
                              IsEnabled="{Binding HasImage}" />
 
+
+                    <Label Content="Pixel order" />
+                    <ComboBox IsEnabled="{Binding HasImage}"
+                              Items="{Binding PixelOrderStrategies}"
+                              SelectedIndex="{Binding SelectedPixelOrderStrategy}" />
+                    
                     <CheckBox IsChecked="{Binding GcodeConfig.AutoHome}"
                               Content="Auto Home" />
                     <CheckBox IsChecked="{Binding GcodeConfig.DrawFrame}"

@@ -75,12 +75,26 @@ namespace Pixelizer.ViewModels
             "Adaptive Thresholding"
         };
 
+        public List<string> PixelOrderStrategies => new()
+        {
+            "KD-Tree",
+            "NearestNeighbour",
+            "Left top to bottom right"
+        };
+
         private int _selectedPixelStrategy;
 
         public int SelectedPixelStrategy
         {
             get => _selectedPixelStrategy;
             set => this.RaiseAndSetIfChanged(ref _selectedPixelStrategy, value);
+        }
+
+        private int _selectedPixelOrderStrategy;
+        public int SelectedPixelOrderStrategy
+        {
+            get => _selectedPixelOrderStrategy;
+            set => this.RaiseAndSetIfChanged(ref _selectedPixelOrderStrategy, value);
         }
 
         public int PixelCount => _pixelList.Count;
@@ -166,9 +180,7 @@ namespace Pixelizer.ViewModels
         private ReactiveCommand<Unit, Unit> ExportImageCommand { get; }
         private ReactiveCommand<Unit, Unit> CancelCommand { get; }
         private ReactiveCommand<Unit, Unit> CalculateTimeCommand { get; }
-
-        private readonly IPixelOrderStrategy _pixelOrderer = new KdTreeOrderStrategy();
-
+        
         public MainWindowViewModel()
         {
             ConvertToGcode = ReactiveCommand.CreateFromTask(Convert);
@@ -252,6 +264,9 @@ namespace Pixelizer.ViewModels
                 .Select(x => x != null)
                 .ToProperty(this, x => x.HasImage);
 
+            var orderStrategyChanged = this.WhenAnyValue(x => x.SelectedPixelOrderStrategy)
+                .Select(_ => Unit.Default);
+            
             var gcodeConfigChanged = GcodeConfig.WhenAnyValue(x => x.FeedRate, x => x.ZAxisDown, x => x.ZAxisUp)
                 .Select(_ => Unit.Default);
             
@@ -260,6 +275,7 @@ namespace Pixelizer.ViewModels
                 
             gcodeConfigChanged
                 .Merge(pixelsChanged)
+                .Merge(orderStrategyChanged)
                 .InvokeCommand(this, x => x.CalculateTimeCommand);
         }
 
@@ -267,7 +283,7 @@ namespace Pixelizer.ViewModels
         {
             Task.Run(() =>
             {
-                var ordered = _pixelOrderer.GetPixelOrder(_pixelList);
+                var ordered = GetSelectedOrderer().GetPixelOrder(_pixelList);
                 var distanceInMm = ordered.CalculateDistance();
                 var upDownMovementInMm = ordered.Count * 2 * (GcodeConfig.ZAxisUp - GcodeConfig.ZAxisDown);
                 TotalDistance = Math.Round((distanceInMm + upDownMovementInMm) / 1000, 2);
@@ -277,6 +293,16 @@ namespace Pixelizer.ViewModels
                 
                 TimeInMinutes = (int)(movingTimeInMinutes + upDownMovementTime);
             });
+        }
+
+        private IPixelOrderStrategy GetSelectedOrderer()
+        {
+            return SelectedPixelOrderStrategy switch
+            {
+                1 => new NearestNeighborStrategy(),
+                2 => new ByOrderStrategy(),
+                _ => new KdTreeOrderStrategy()
+            };
         }
 
         private async Task ExportImage()
@@ -324,7 +350,7 @@ namespace Pixelizer.ViewModels
 
             var result = await Task.Run(() =>
             {
-                var encoder = new GcodeEncoder(_pixelOrderer);
+                var encoder = new GcodeEncoder(GetSelectedOrderer());
                 return encoder.ConvertImageToGcode(_pixelList, _currentImage.Width, _currentImage.Height, GcodeConfig);
             });
 
