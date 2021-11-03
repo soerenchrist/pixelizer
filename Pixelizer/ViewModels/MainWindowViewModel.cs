@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using DynamicData.Binding;
 using Pixelizer.Models;
 using Pixelizer.Services;
 using Pixelizer.Services.Image;
@@ -251,8 +252,14 @@ namespace Pixelizer.ViewModels
                 .Select(x => x != null)
                 .ToProperty(this, x => x.HasImage);
 
-            this.WhenAnyValue(x => x.PixelCount)
-                .Select(_ => Unit.Default)
+            var gcodeConfigChanged = GcodeConfig.WhenAnyValue(x => x.FeedRate, x => x.ZAxisDown, x => x.ZAxisUp)
+                .Select(_ => Unit.Default);
+            
+            var pixelsChanged = this.WhenAnyValue(x => x.PixelCount)
+                .Select(_ => Unit.Default);
+                
+            gcodeConfigChanged
+                .Merge(pixelsChanged)
                 .InvokeCommand(this, x => x.CalculateTimeCommand);
         }
 
