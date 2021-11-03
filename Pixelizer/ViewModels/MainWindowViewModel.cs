@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
-using DynamicData.Binding;
 using Pixelizer.Models;
 using Pixelizer.Services;
 using Pixelizer.Services.Image;
@@ -177,7 +176,7 @@ namespace Pixelizer.ViewModels
 
         public ReactiveCommand<Unit, Unit> ConvertToGcode { get; }
         private ReactiveCommand<Unit, Unit> ConvertImageCommand { get; }
-        private ReactiveCommand<Unit, Unit> ExportImageCommand { get; }
+        public ReactiveCommand<Unit, Unit> ExportImageCommand { get; }
         private ReactiveCommand<Unit, Unit> CancelCommand { get; }
         private ReactiveCommand<Unit, Unit> CalculateTimeCommand { get; }
         
