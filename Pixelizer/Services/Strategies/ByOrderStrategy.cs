@@ -1,12 +1,9 @@
-using System.Collections.Generic;
+namespace Pixelizer.Services.Strategies;
 
-namespace Pixelizer.Services.Strategies
+public class ByOrderStrategy : IPixelOrderStrategy
 {
-    public class ByOrderStrategy : IPixelOrderStrategy
+    public List<(double, double)> GetPixelOrder(List<(double, double)> unorderedList)
     {
-        public List<(double, double)> GetPixelOrder(List<(double, double)> unorderedList)
-        {
-            return unorderedList;
-        }
+        return unorderedList;
     }
 }

@@ -1,7 +1,9 @@
-namespace Pixelizer.Models
+namespace Pixelizer.Models;
+
+public enum ColorMode
 {
-    public enum ColorMode
-    {
-        Black, Red, Green, Blue
-    }
+    Black,
+    Red,
+    Green,
+    Blue
 }

@@ -3,10 +3,10 @@
              xmlns:local="using:Pixelizer"
              x:Class="Pixelizer.App">
     <Application.DataTemplates>
-        <local:ViewLocator/>
+        <local:ViewLocator />
     </Application.DataTemplates>
 
     <Application.Styles>
-        <FluentTheme Mode="Light"/>
+        <FluentTheme Mode="Light" />
     </Application.Styles>
 </Application>

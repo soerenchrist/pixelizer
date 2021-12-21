@@ -1,63 +1,69 @@
 using ReactiveUI;
 
-namespace Pixelizer.Models
+namespace Pixelizer.Models;
+
+public class GcodeConfig : ReactiveObject
 {
-    public class GcodeConfig : ReactiveObject
+    private bool _autoHome;
+    private bool _drawFrame;
+
+    private int _feedRate = 300;
+
+    private int _offsetX;
+
+    private int _offsetY;
+
+    private double _penWidth = 1;
+
+    private int _zAxisDown;
+
+    private int _zAxisUp = 1;
+
+    public bool DrawFrame
     {
-        private bool _drawFrame;
-        public bool DrawFrame
-        {
-            get => _drawFrame;
-            set => this.RaiseAndSetIfChanged(ref _drawFrame, value);
-        }
-        
-        private bool _autoHome;
-        public bool AutoHome
-        {
-            get => _autoHome;
-            set => this.RaiseAndSetIfChanged(ref _autoHome, value);
-        }
-        
-        private int _zAxisUp = 1;
-        public int ZAxisUp
-        {
-            get => _zAxisUp;
-            set => this.RaiseAndSetIfChanged(ref _zAxisUp, value);
-        }
+        get => _drawFrame;
+        set => this.RaiseAndSetIfChanged(ref _drawFrame, value);
+    }
 
-        private int _zAxisDown;
-        public int ZAxisDown
-        {
-            get => _zAxisDown;
-            set => this.RaiseAndSetIfChanged(ref _zAxisDown, value);
-        }
+    public bool AutoHome
+    {
+        get => _autoHome;
+        set => this.RaiseAndSetIfChanged(ref _autoHome, value);
+    }
 
-        private double _penWidth = 1;
-        public double PenWidth
-        {
-            get => _penWidth;
-            set => this.RaiseAndSetIfChanged(ref _penWidth, value);
-        }
+    public int ZAxisUp
+    {
+        get => _zAxisUp;
+        set => this.RaiseAndSetIfChanged(ref _zAxisUp, value);
+    }
 
-        private int _feedRate = 300;
-        public int FeedRate
-        {
-            get => _feedRate;
-            set => this.RaiseAndSetIfChanged(ref _feedRate, value);
-        }
+    public int ZAxisDown
+    {
+        get => _zAxisDown;
+        set => this.RaiseAndSetIfChanged(ref _zAxisDown, value);
+    }
 
-        private int _offsetX;
-        public int OffsetX
-        {
-            get => _offsetX;
-            set => this.RaiseAndSetIfChanged(ref _offsetX, value);
-        }
+    public double PenWidth
+    {
+        get => _penWidth;
+        set => this.RaiseAndSetIfChanged(ref _penWidth, value);
+    }
 
-        private int _offsetY;
-        public int OffsetY
-        {
-            get => _offsetY;
-            set => this.RaiseAndSetIfChanged(ref _offsetY, value);
-        }
+    public int FeedRate
+    {
+        get => _feedRate;
+        set => this.RaiseAndSetIfChanged(ref _feedRate, value);
+    }
+
+    public int OffsetX
+    {
+        get => _offsetX;
+        set => this.RaiseAndSetIfChanged(ref _offsetX, value);
+    }
+
+    public int OffsetY
+    {
+        get => _offsetY;
+        set => this.RaiseAndSetIfChanged(ref _offsetY, value);
     }
 }

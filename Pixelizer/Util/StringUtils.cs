@@ -1,12 +1,11 @@
 using System.Globalization;
 
-namespace Pixelizer.Util
+namespace Pixelizer.Util;
+
+public static class StringUtils
 {
-    public static class StringUtils
+    public static string ToFormatted(this double val)
     {
-        public static string ToFormatted(this double val)
-        {
-            return val.ToString(CultureInfo.InvariantCulture);
-        }
+        return val.ToString(CultureInfo.InvariantCulture);
     }
 }

@@ -1,8 +1,7 @@
 ﻿using ReactiveUI;
 
-namespace Pixelizer.ViewModels
+namespace Pixelizer.ViewModels;
+
+public class ViewModelBase : ReactiveObject
 {
-    public class ViewModelBase : ReactiveObject
-    {
-    }
 }
